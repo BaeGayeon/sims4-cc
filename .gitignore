@@ -1,0 +1,8 @@
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+.cc_manager/
+.cc_trash/
+/tmp/cc_gallery/
+delete_cc.sh
