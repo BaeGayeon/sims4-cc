@@ -657,13 +657,13 @@ HTML_PAGE = """<!DOCTYPE html>
   .seg button + button { border-left: 1px solid #ccc; }
   .seg button.on { background: #333; color: white; }
   /* 모드 토글: 삭제 = 빨강 (위험), 카테고리 편집 = 파랑 (안전) */
-  #modeSeg { border: 2px solid #d9534f; border-radius: 8px; padding: 2px; background: #fbecec; box-shadow: 0 0 0 2px rgba(217,83,79,.15); }
-  #modeSeg button { padding: 6px 14px; font-size: 13px; font-weight: 600; border-radius: 5px; border-left: none !important; }
-  #modeSeg button.on { background: #d9534f; color: white; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
-  #modeSeg button:not(.on) { background: transparent; color: #d9534f; }
-  body.mode-category #modeSeg { border-color: #4a90e2; background: #eaf3fc; box-shadow: 0 0 0 2px rgba(74,144,226,.15); }
-  body.mode-category #modeSeg button:not(.on) { color: #4a90e2; }
-  body.mode-category #modeSeg button.on { background: #4a90e2; }
+  #modeSeg { border: 2px solid #d9534f !important; border-radius: 8px; padding: 2px; background: #fbecec !important; box-shadow: 0 0 0 2px rgba(217,83,79,.15); }
+  #modeSeg button { padding: 6px 14px !important; font-size: 13px !important; font-weight: 700 !important; border-radius: 5px !important; border-left: none !important; }
+  #modeSeg button.on { background: #d9534f !important; color: white !important; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+  #modeSeg button:not(.on) { background: transparent !important; color: #d9534f !important; }
+  body.mode-category #modeSeg { border-color: #4a90e2 !important; background: #eaf3fc !important; box-shadow: 0 0 0 2px rgba(74,144,226,.15); }
+  body.mode-category #modeSeg button:not(.on) { color: #4a90e2 !important; background: transparent !important; }
+  body.mode-category #modeSeg button.on { background: #4a90e2 !important; color: white !important; }
   /* Switch toggle */
   .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #444; cursor: pointer; user-select: none; }
   .switch input { appearance: none; -webkit-appearance: none; width: 32px; height: 18px; background: #ccc; border-radius: 10px; position: relative; cursor: pointer; transition: background .2s; margin: 0; }
@@ -1768,6 +1768,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(content)))
+        # 캐시 방지: HTML/API는 항상 최신, 썸네일은 캐시 가능
+        if ctype.startswith("text/html") or "json" in ctype:
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.end_headers()
         self.wfile.write(content)
 
