@@ -22,12 +22,21 @@ from urllib.parse import urlparse, unquote
 SIMS_ROOT = Path("/Users/bae/Games/Electronic Arts/The Sims 4")
 MODS = SIMS_ROOT / "Mods"
 CC_ROOT = MODS / "CC FeaturedCreators"
-APP_STATE = SIMS_ROOT / ".cc_manager"
+# 앱 캐시는 Sims 폴더 밖(macOS 표준 위치)에 저장 - 게임 데이터 오염 방지
+APP_STATE = Path.home() / "Library" / "Application Support" / "Sims4CCManager"
 THUMBS_DIR = APP_STATE / "thumbs"
 MANIFEST_PATH = APP_STATE / "manifest.json"
+# 휴지통은 Mods 안(빠른 이동/복원 위해) 유지, 단 dot-prefix라 심즈4가 무시함
 TRASH_DIR = MODS / ".cc_trash"
 
-APP_STATE.mkdir(exist_ok=True)
+# 옛 위치 → 새 위치 마이그레이션
+_OLD_STATE = SIMS_ROOT / ".cc_manager"
+if _OLD_STATE.exists() and not APP_STATE.exists():
+    APP_STATE.parent.mkdir(parents=True, exist_ok=True)
+    import shutil as _shutil
+    _shutil.move(str(_OLD_STATE), str(APP_STATE))
+
+APP_STATE.mkdir(parents=True, exist_ok=True)
 THUMBS_DIR.mkdir(exist_ok=True)
 TRASH_DIR.mkdir(exist_ok=True)
 
