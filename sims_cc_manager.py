@@ -821,6 +821,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <button onclick="undo()" id="undoBtn" title="되돌리기 (Cmd+Z)" disabled>↶</button>
     <button onclick="rescan()" class="blue">🔄 재스캔</button>
     <button onclick="openTrash()">🗑️ 휴지통</button>
+    <button onclick="openHelp()" title="사용법 & 단축키" style="border-radius:50%; width:32px; padding:0; font-size:16px;">❓</button>
   </div>
 
   <div class="row">
@@ -894,6 +895,83 @@ HTML_PAGE = """<!DOCTYPE html>
 </dialog>
 <div id="toast" class="toast"></div>
 <div id="ctxMenu"></div>
+<dialog id="help-dialog" style="max-width: 760px; width: 90vw; padding: 0;">
+  <div style="padding: 20px 24px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between;">
+    <h2 style="margin: 0; font-size: 18px;">🎮 CC Manager 사용법</h2>
+    <button onclick="document.getElementById('help-dialog').close()" style="border-radius: 50%; width: 30px; height: 30px; padding: 0; font-size: 14px;">✕</button>
+  </div>
+  <div style="padding: 20px 24px; max-height: 70vh; overflow-y: auto; font-size: 13px; line-height: 1.6;">
+
+    <h3 style="margin-top: 0; color: #4a90e2;">🎯 첫 실행</h3>
+    <p>처음 실행하면 <b>Mods 폴더 전체 스캔</b>이 실행됩니다 (약 30초~2분, CC 양에 따라).
+    스캔이 끝나면 창작자 폴더별로 그룹핑된 갤러리가 뜹니다. 각 아이템에는
+    CAS 썸네일 (게임에서 보이는 미리보기 이미지) 이 표시됩니다.</p>
+
+    <h3 style="color: #d9534f;">🗑️ 모드 1: 삭제 선택</h3>
+    <p>지우고 싶은 CC를 표시하고 휴지통으로 보내는 모드 (기본).</p>
+    <ul>
+      <li><b>클릭</b> = 아이템을 삭제 표시 (빨간 테두리). 다시 클릭 = 해제</li>
+      <li><b>Cmd+클릭</b> = 다중 선택 (파란 테두리) — 카테고리 편집용</li>
+      <li><b>드래그 박스</b> = 빈 공간 드래그로 범위 다중 선택</li>
+      <li>하단 <b>"🗑️ 휴지통으로 이동"</b> 클릭 → 표시한 파일 전부 휴지통행</li>
+      <li>휴지통 이동은 <b>파일 삭제가 아니라 이동</b>. 언제든 복원 가능</li>
+      <li>휴지통에서도 <b>완전 삭제</b> 해야 진짜 사라짐</li>
+    </ul>
+
+    <h3 style="color: #4a90e2;">🏷️ 모드 2: 카테고리 편집</h3>
+    <p>잘못 분류된 아이템을 수동으로 카테고리 지정.</p>
+    <ul>
+      <li><b>클릭</b> = 다중 선택 (파란 테두리)</li>
+      <li>하단 카테고리 드롭다운에서 선택 → <b>"카테고리 지정"</b></li>
+      <li>또는 선택된 아이템을 <b>카테고리 chip</b>으로 드래그</li>
+      <li>수동 지정한 아이템은 노란 테두리 아이콘 표시 (재스캔 시 유지됨)</li>
+      <li><b>우클릭</b> = 아이템 단일 카테고리 변경 (어느 모드에서든)</li>
+    </ul>
+
+    <h3 style="color: #333;">📁 상태 표시</h3>
+    <table style="border-collapse: collapse; width: 100%;">
+      <tr style="background: #f7f7f7;"><td style="padding: 6px 8px; border: 1px solid #eee;">빨간 테두리</td><td style="padding: 6px 8px; border: 1px solid #eee;">삭제 표시됨 (아직 휴지통 안 감)</td></tr>
+      <tr><td style="padding: 6px 8px; border: 1px solid #eee;">파란 테두리 + ✓</td><td style="padding: 6px 8px; border: 1px solid #eee;">다중 선택됨 (카테고리 지정 대상)</td></tr>
+      <tr style="background: #f7f7f7;"><td style="padding: 6px 8px; border: 1px solid #eee;">회색 + 🗑️ 휴지통 배지</td><td style="padding: 6px 8px; border: 1px solid #eee;">휴지통에 있음 — 클릭하면 복원</td></tr>
+      <tr><td style="padding: 6px 8px; border: 1px solid #eee;">어두운 회색 + ~취소선~</td><td style="padding: 6px 8px; border: 1px solid #eee;">완전 삭제됨 (되돌릴 수 없음)</td></tr>
+      <tr style="background: #f7f7f7;"><td style="padding: 6px 8px; border: 1px solid #eee;">노란 카테고리 아이콘</td><td style="padding: 6px 8px; border: 1px solid #eee;">수동으로 카테고리 지정한 아이템</td></tr>
+    </table>
+
+    <h3 style="color: #333;">⌨️ 단축키 & 편의 기능</h3>
+    <ul>
+      <li><b>Cmd + Z</b> = 되돌리기 (삭제표시, 카테고리 변경, 파일 삭제)</li>
+      <li><b>Cmd + 클릭</b> = 다중선택 (모드 상관없이 반대 동작)</li>
+      <li>이름 <b>hover</b> = 긴 파일명 팝오버로 전체 표시</li>
+      <li>이름 <b>클릭</b> = 파일명 복사 (.package 제외) — 검색 편함</li>
+      <li>썸네일 hover 시 <b>◀ ▶</b> = 여러 썸네일 넘겨보기</li>
+    </ul>
+
+    <h3 style="color: #333;">🔍 필터 & 그룹</h3>
+    <ul>
+      <li><b>그룹</b>: 폴더별 (창작자별) / 카테고리별</li>
+      <li><b>정렬</b>: 그룹 정렬 (이름·크기·개수), 아이템 정렬 (이름·크기·카테고리)</li>
+      <li><b>카테고리 chip</b>: 옷/헤어/얼굴/스킨/액세서리/신발/유틸/기타. 클릭하면 세부 카테고리로</li>
+      <li>토글: 지울 것만 · 수동 지정만 · 휴지통 항목 숨기기 · 완전삭제 숨기기 · 모두 접기</li>
+    </ul>
+
+    <h3 style="color: #333;">📂 저장 위치</h3>
+    <ul>
+      <li>앱 캐시·설정·휴지통: <code>~/Library/Application Support/Sims4CCManager/</code></li>
+      <li>Sims 4 데이터: <code>~/Games/Electronic Arts/The Sims 4/</code> (앱이 안 건드림)</li>
+      <li>재스캔은 자동 분류만 다시 함 — <b>수동 지정한 카테고리는 유지</b></li>
+    </ul>
+
+    <h3 style="color: #333;">💡 팁</h3>
+    <ul>
+      <li>큰 창작자 폴더 정리하려면 → 그룹정렬 "크기 큰 순" → 위에서부터 확인</li>
+      <li>같은 종류만 한꺼번에 보려면 → 카테고리 chip 클릭</li>
+      <li>카테고리 잘못 잡힌 것 → 우클릭 → 정확한 카테고리 선택</li>
+      <li>여러 개 같은 카테고리로 → Cmd+클릭으로 다중 선택 후 하단 바에서 지정</li>
+      <li>휴지통에서 완전 삭제 전엔 언제든 복원 가능 — 안심하고 사용</li>
+    </ul>
+
+  </div>
+</dialog>
 <div id="bulkBar">
   <span class="info">📌 <b id="bulkCount">0</b>개 선택됨</span>
   <select id="bulkCat"><option value="">카테고리 선택...</option></select>
@@ -1319,6 +1397,10 @@ async function applyToPaths(paths, category) {
     : `↺ ${paths.length}개 수동 지정 해제`);
   bulkSel.clear();
   await loadManifest();
+}
+
+function openHelp() {
+  document.getElementById('help-dialog').showModal();
 }
 
 function showCategoryMenu(event, path, currentCat) {
