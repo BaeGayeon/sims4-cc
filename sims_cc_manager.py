@@ -733,7 +733,7 @@ HTML_PAGE = """<!DOCTYPE html>
   .creator-count { color: #666; font-size: 12px; }
   .creator-actions { display: flex; gap: 6px; }
   .creator-actions button { padding: 3px 8px; font-size: 11px; }
-  .grid { padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
+  .grid { padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; align-items: start; }
   .item { position: relative; border: 2px solid transparent; border-radius: 4px; cursor: pointer; background: #f9f9f9; overflow: visible; }
   .item .thumb-img, .item .no-thumb { border-radius: 2px 2px 0 0; overflow: hidden; }
   .item:hover { border-color: #4a90e2; z-index: 10; }
@@ -763,7 +763,10 @@ HTML_PAGE = """<!DOCTYPE html>
   .item.perma-deleted .thumb-img { filter: grayscale(1) brightness(0.6); }
   .item.perma-deleted .name, .item.perma-deleted .name-full { text-decoration: line-through; color: #999; }
   .trash-badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.75); color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; z-index: 3; }
-  .cat-icon { position: absolute; bottom: 26px; right: 4px; background: rgba(255,255,255,.92); padding: 1px 5px; border-radius: 10px; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,.15); cursor: context-menu; z-index: 2; }
+  /* 카테고리 아이콘: 썸네일 이미지 안쪽 우하단 (이름과 안 겹침) */
+  .cat-icon { position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,.92); padding: 2px 6px; border-radius: 10px; font-size: 13px; box-shadow: 0 1px 3px rgba(0,0,0,.2); cursor: context-menu; z-index: 2; transition: opacity .15s; }
+  .item:hover .cat-icon { opacity: 0.2; }  /* hover 시 흐리게 → thumb nav 안 가림 */
+  .item:hover .cat-icon:hover { opacity: 1; }  /* 아이콘 자체 hover 시 다시 진하게 */
   .cat-icon.override { background: #ffd700; box-shadow: 0 0 0 1px #b8860b; }
   #ctxMenu { position: fixed; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.15); padding: 4px; z-index: 1000; max-height: 400px; overflow-y: auto; min-width: 180px; display: none; }
   #ctxMenu .ctx-header { padding: 4px 8px; font-size: 11px; color: #666; border-bottom: 1px solid #eee; margin-bottom: 4px; }
@@ -774,8 +777,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .creator-sub { padding: 0 6px 2px; font-size: 9px; color: #999; font-style: italic; }
   .item img { display: block; width: 100%; height: auto; }
   .item .no-thumb { padding: 40px 8px; text-align: center; color: #999; font-size: 11px; background: #eee; }
-  /* 기본: 2줄까지 잘리지 않고 항상 완전히 보임 (display -webkit-box + line-clamp) */
-  .item .name { padding: 3px 6px; font-size: 10px; color: #555; word-break: break-all; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; min-height: 2.7em; }
+  /* 기본: 2줄까지 잘리지 않고 항상 완전히 보임. 한 줄이면 한 줄 높이 유지 (min-height 없음). */
+  .item .name { padding: 3px 6px; font-size: 10px; color: #555; word-break: break-all; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
   /* 3줄 이상 긴 이름만 hover 시 팝오버로 위쪽 확장 - 원본은 그대로 유지, 그 위에 덮음 */
   .item .name-full { display: none; position: absolute; bottom: 0; left: 0; right: 0; padding: 3px 6px; font-size: 10px; color: #222; word-break: break-all; line-height: 1.35; background: white; z-index: 100; box-shadow: 0 -2px 6px rgba(0,0,0,.15); border-radius: 0 0 2px 2px; }
   /* JS로 짧은 이름은 name-full 을 아예 안 그리게 함 */
@@ -784,7 +787,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .item.selected::before { left: 4px; }
   .item.selected .sz { display: none; }
   .thumb-img, .no-thumb { cursor: pointer; }
-  .thumb-nav { position: absolute; top: 4px; left: 4px; right: 4px; display: flex; align-items: center; justify-content: space-between; opacity: 0; transition: opacity .15s; pointer-events: none; }
+  /* Thumb nav은 아이템 중앙 하단 (썸네일 위, 카테고리 아이콘과 안 겹침) */
+  .thumb-nav { position: absolute; bottom: 40%; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity .15s; pointer-events: none; background: rgba(0,0,0,.55); border-radius: 14px; padding: 2px 4px; }
   .item:hover .thumb-nav { opacity: 1; pointer-events: auto; }
   .thumb-btn { background: rgba(0,0,0,.6); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .thumb-btn:hover { background: rgba(0,0,0,.85); }
