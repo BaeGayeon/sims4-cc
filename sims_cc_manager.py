@@ -663,8 +663,9 @@ HTML_PAGE = """<!DOCTYPE html>
   .creator-actions { display: flex; gap: 6px; }
   .creator-actions button { padding: 3px 8px; font-size: 11px; }
   .grid { padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
-  .item { position: relative; border: 2px solid transparent; border-radius: 4px; cursor: pointer; background: #f9f9f9; overflow: hidden; }
-  .item:hover { border-color: #4a90e2; }
+  .item { position: relative; border: 2px solid transparent; border-radius: 4px; cursor: pointer; background: #f9f9f9; overflow: visible; }
+  .item .thumb-img, .item .no-thumb { border-radius: 2px 2px 0 0; overflow: hidden; }
+  .item:hover { border-color: #4a90e2; z-index: 10; }
   .item.marked { border-color: #d9534f; background: #ffe8e8; }
   .item.marked .thumb-img, .item.marked .no-thumb { filter: grayscale(0.5) brightness(0.7); }
   .item.marked::after {
@@ -703,10 +704,11 @@ HTML_PAGE = """<!DOCTYPE html>
   .creator-sub { padding: 0 6px 2px; font-size: 9px; color: #999; font-style: italic; }
   .item img { display: block; width: 100%; height: auto; }
   .item .no-thumb { padding: 40px 8px; text-align: center; color: #999; font-size: 11px; background: #eee; }
-  .item .name { padding: 3px 6px; font-size: 10px; color: #555; word-break: break-all; line-height: 1.3; max-height: 2.6em; overflow: hidden; transition: max-height .2s, background .2s; position: relative; }
-  .item:hover .name { max-height: 20em; background: white; z-index: 4; box-shadow: 0 2px 6px rgba(0,0,0,.15); }
-  .item .sz { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.6); color: white; padding: 1px 5px; font-size: 10px; border-radius: 3px; pointer-events: none; transition: opacity .15s; }
-  .item:hover .sz { opacity: 0; }
+  .item .name { padding: 3px 6px; font-size: 10px; color: #555; word-break: break-all; line-height: 1.3; max-height: 2.6em; overflow: hidden; }
+  /* 전체 파일명은 팝오버 - 레이아웃 흔들지 않음 */
+  .item .name-full { display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 2px; background: white; padding: 6px 8px; font-size: 11px; color: #222; word-break: break-all; line-height: 1.4; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.2); z-index: 200; pointer-events: none; }
+  .item:hover .name-full { display: block; }
+  .item .sz { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.6); color: white; padding: 1px 5px; font-size: 10px; border-radius: 3px; pointer-events: none; z-index: 2; }
   .item.selected::before { left: 4px; }
   .item.selected .sz { display: none; }
   .thumb-img, .no-thumb { cursor: pointer; }
@@ -1079,7 +1081,7 @@ function render() {
       const catIcon = it.cat_icon ? `<div class="cat-icon${overrideClass}" title="${escapeHtml(catTitle + ': ' + (it.cats||[]).join(', '))}" data-item-path="${escapeHtml(it.path)}" data-item-cat="${escapeHtml(it.primary_cat||'')}">${it.cat_icon}</div>` : '';
       const creatorSubtitle = it._creator ? `<div class="creator-sub">${escapeHtml(it._creator)}</div>` : '';
       div.dataset.thumbs = JSON.stringify(it.thumbs);
-      div.innerHTML = thumbHtml + trashBadge + catIcon + `<div class="sz">${human(it.size)}</div>${creatorSubtitle}<div class="name">${escapeHtml(it.file)}</div>`;
+      div.innerHTML = thumbHtml + trashBadge + catIcon + `<div class="sz">${human(it.size)}</div>${creatorSubtitle}<div class="name">${escapeHtml(it.file)}</div><div class="name-full">${escapeHtml(it.file)}</div>`;
       const clickHandler = it.trashed
         ? async () => {
             if (!confirm(`복원할까요?\\n${it.file}`)) return;
