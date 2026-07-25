@@ -1393,13 +1393,16 @@ function openMarkedDialog() {
   document.getElementById('marked-summary').textContent = `(${items.length}개 · ${human(sz)})`;
   list.innerHTML = items.map(it => {
     const thumbHtml = it.thumbs && it.thumbs.length
-      ? `<img src="/thumbs/${it.thumbs[0]}" style="width:100%; display:block;">`
-      : `<div style="padding:40px 8px; text-align:center; color:#999; font-size:11px; background:#eee;">썸네일 없음</div>`;
-    return `<div class="marked-tile" data-path="${escapeHtml(it.path)}" style="position:relative; border:2px solid #d9534f; border-radius:4px; background:white; overflow:hidden;">
+      ? `<img class="thumb-img" src="/thumbs/${it.thumbs[0]}" style="width:100%; display:block;">`
+      : `<div class="no-thumb" style="padding:40px 8px; text-align:center; color:#999; font-size:11px; background:#eee;">썸네일 없음</div>`;
+    const needsPopover = it.file.length > 44;
+    const nameFull = needsPopover ? `<div class="name-full">${escapeHtml(it.file)}</div>` : '';
+    return `<div class="item marked-tile" data-path="${escapeHtml(it.path)}" style="border:2px solid #d9534f; background:white;">
       ${thumbHtml}
-      <button style="position:absolute; top:4px; right:4px; background:rgba(255,255,255,.9); border:1px solid #ccc; border-radius:50%; width:22px; height:22px; padding:0; cursor:pointer; font-size:12px; z-index:2;" title="표시 해제" onclick="unmarkFromDialog('${escapeAttr(it.path)}')">✕</button>
-      <div style="padding:3px 6px; font-size:10px; color:#555; word-break:break-all; line-height:1.3; max-height:2.6em; overflow:hidden;">${escapeHtml(it.file)}</div>
-      <div style="position:absolute; bottom:24px; right:0; background:rgba(0,0,0,.6); color:white; padding:1px 4px; font-size:10px;">${human(it.size)}</div>
+      <button style="position:absolute; top:4px; right:4px; background:rgba(255,255,255,.9); border:1px solid #ccc; border-radius:50%; width:22px; height:22px; padding:0; cursor:pointer; font-size:12px; z-index:3;" title="표시 해제" onclick="unmarkFromDialog('${escapeAttr(it.path)}')">✕</button>
+      <div class="sz">${human(it.size)}</div>
+      <div class="name">${escapeHtml(it.file)}</div>
+      ${nameFull}
     </div>`;
   }).join('');
   document.getElementById('marked-dialog').showModal();
@@ -1491,12 +1494,15 @@ async function openTrash() {
       } else {
         thumbHtml = `<div class="no-thumb" style="padding:40px 8px; text-align:center; color:#999; font-size:11px; background:#eee;">썸네일 없음</div>`;
       }
+      const needsPopover = fileName.length > 44;
+      const nameFull = needsPopover ? `<div class="name-full">${escapeHtml(fileName)}</div>` : '';
       return `
-        <label class="trash-tile item" data-thumbs='${JSON.stringify(thumbs).replace(/'/g, "&#39;")}' data-thumb-idx="0" style="position:relative; border:2px solid transparent; border-radius:4px; cursor:pointer; background:white; overflow:hidden; display:block;">
+        <label class="trash-tile item" data-thumbs='${JSON.stringify(thumbs).replace(/'/g, "&#39;")}' data-thumb-idx="0" style="background:white; display:block;">
           <input type="checkbox" value="${escapeHtml(it.path)}" onchange="updateTrashSelectedCount()" style="position:absolute; top:6px; left:6px; z-index:3; transform:scale(1.3);">
           ${thumbHtml}
-          <div style="padding:3px 6px; font-size:10px; color:#555; word-break:break-all; line-height:1.3; max-height:2.6em; overflow:hidden;">${escapeHtml(fileName)}</div>
-          <div style="position:absolute; bottom:24px; right:0; background:rgba(0,0,0,.6); color:white; padding:1px 4px; font-size:10px;">${human(it.size)}</div>
+          <div class="sz">${human(it.size)}</div>
+          <div class="name">${escapeHtml(fileName)}</div>
+          ${nameFull}
         </label>
       `;
     }).join('');
