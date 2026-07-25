@@ -787,8 +787,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .item.selected::before { left: 4px; }
   .item.selected .sz { display: none; }
   .thumb-img, .no-thumb { cursor: pointer; }
-  /* Thumb nav은 아이템 중앙 하단 (썸네일 위, 카테고리 아이콘과 안 겹침) */
-  .thumb-nav { position: absolute; bottom: 40%; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity .15s; pointer-events: none; background: rgba(0,0,0,.55); border-radius: 14px; padding: 2px 4px; }
+  /* Thumb nav은 썸네일 아래쪽 (이름 바로 위) */
+  .thumb-nav { position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity .15s; pointer-events: none; background: rgba(0,0,0,.65); border-radius: 14px; padding: 2px 4px; }
   .item:hover .thumb-nav { opacity: 1; pointer-events: auto; }
   .thumb-btn { background: rgba(0,0,0,.6); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .thumb-btn:hover { background: rgba(0,0,0,.85); }
@@ -860,7 +860,7 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
     <div class="divider"></div>
     <button onclick="selectAllFiltered()" title="지금 화면에 보이는 아이템 모두를 다중선택에 추가">☑️ 전체 선택</button>
-    <button onclick="clearBulkSel()" title="다중선택(파란 테두리) 전체 해제">▢ 선택 해제</button>
+    <button onclick="clearBulkSel()" title="다중선택(파란 테두리) 전체 해제">▢ 전체 선택 해제</button>
     <div class="divider"></div>
     <button onclick="clearMarks()" title="삭제 표시(빨간 테두리) 전체 해제">🗑️ 삭제표시 전체 해제</button>
   </div>
