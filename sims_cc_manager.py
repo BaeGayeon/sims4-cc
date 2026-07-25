@@ -411,10 +411,12 @@ def scan_cc(progress_cb=None):
                 if fc[0] not in [c[0] for c in cats] and fc[0] != "기타":
                     cats.append(fc)
 
+        stat = pkg.stat()
         item = {
             "file": pkg.name,
             "path": rel_pkg_str,
-            "size": pkg.stat().st_size,
+            "size": stat.st_size,
+            "mtime": stat.st_mtime,   # 파일 수정 시각 (최근순/오래된순 정렬용)
             "thumbs": [],
             "cats": [c[0] for c in cats],
             "primary_cat": cats[0][0],
@@ -842,6 +844,8 @@ HTML_PAGE = """<!DOCTYPE html>
         <option value="name">이름</option>
         <option value="size">크기</option>
         <option value="count">개수</option>
+        <option value="recent">최근 파일순</option>
+        <option value="oldest">오래된 파일순</option>
       </select>
     </div>
     <div class="group">
@@ -850,6 +854,8 @@ HTML_PAGE = """<!DOCTYPE html>
         <option value="name">이름</option>
         <option value="size">크기</option>
         <option value="category">카테고리</option>
+        <option value="recent">최근순</option>
+        <option value="oldest">오래된순</option>
       </select>
     </div>
   </div>
@@ -1071,9 +1077,18 @@ function saveMarks() {
 }
 
 function creatorStats(c) {
+  let maxMtime = 0, minMtime = Infinity;
+  for (const it of c.items) {
+    if (it.mtime) {
+      if (it.mtime > maxMtime) maxMtime = it.mtime;
+      if (it.mtime < minMtime) minMtime = it.mtime;
+    }
+  }
   return {
     count: c.items.length,
     size: c.items.reduce((s, it) => s + it.size, 0),
+    maxMtime: maxMtime || 0,
+    minMtime: minMtime === Infinity ? 0 : minMtime,
   };
 }
 
@@ -1190,6 +1205,8 @@ function render() {
   creators.forEach(c => c._stats = creatorStats(c));
   if (sortBy === 'size') creators.sort((a,b) => b._stats.size - a._stats.size);
   else if (sortBy === 'count') creators.sort((a,b) => b._stats.count - a._stats.count);
+  else if (sortBy === 'recent') creators.sort((a,b) => b._stats.maxMtime - a._stats.maxMtime);
+  else if (sortBy === 'oldest') creators.sort((a,b) => a._stats.minMtime - b._stats.minMtime);
   else creators.sort((a,b) => a.name.localeCompare(b.name));
 
   for (const c of creators) {
@@ -1205,6 +1222,8 @@ function render() {
     });
     if (itemSortBy === 'size') items = items.slice().sort((a,b) => b.size - a.size);
     else if (itemSortBy === 'category') items = items.slice().sort((a,b) => ((a.cats||[])[0]||'기타').localeCompare((b.cats||[])[0]||'기타') || a.file.localeCompare(b.file));
+    else if (itemSortBy === 'recent') items = items.slice().sort((a,b) => (b.mtime||0) - (a.mtime||0));
+    else if (itemSortBy === 'oldest') items = items.slice().sort((a,b) => (a.mtime||0) - (b.mtime||0));
     else items = items.slice().sort((a,b) => a.file.localeCompare(b.file));
     if (!items.length) continue;
     visibleItems += items.length;
