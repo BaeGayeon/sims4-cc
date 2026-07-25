@@ -752,7 +752,7 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
 
   <div class="row">
-    <input type="search" id="search" placeholder="🔍 파일명·창작자 검색..." style="flex:1; min-width:180px;">
+    <input type="search" id="search" placeholder="🔍 파일명·창작자 검색" style="width: 260px;">
     <div class="group">
       <span class="label">그룹</span>
       <div class="seg" id="groupSeg">
@@ -803,7 +803,7 @@ HTML_PAGE = """<!DOCTYPE html>
 <div id="footer">
   <div class="count" onclick="openMarkedDialog()" style="cursor:pointer; user-select:none;">
     삭제 표시: <b id="marked-count">0</b>개 · 절약 예상: <b id="marked-size">0 B</b>
-    <span style="color:#888; font-size:12px; margin-left:8px;">▲ 클릭해서 목록 보기</span>
+    <span style="color:#888; font-size:12px; margin-left:8px;">▲ 목록 보기</span>
   </div>
   <button onclick="performDelete()" class="primary">🗑️ 휴지통으로 이동</button>
 </div>
@@ -821,7 +821,7 @@ HTML_PAGE = """<!DOCTYPE html>
 <div id="toast" class="toast"></div>
 <div id="ctxMenu"></div>
 <div id="bulkBar">
-  <span class="info">📌 <b id="bulkCount">0</b>개 선택됨 <span style="color:#aaa; font-size:12px; margin-left:8px;">(빈 공간 드래그 = 박스 선택 · Cmd+클릭 = 개별 토글)</span></span>
+  <span class="info">📌 <b id="bulkCount">0</b>개 선택됨</span>
   <select id="bulkCat"><option value="">카테고리 선택...</option></select>
   <button onclick="applyBulkCategory()" class="blue">✓ 카테고리 지정</button>
   <button onclick="clearBulkSel()">선택 해제</button>
@@ -1540,7 +1540,7 @@ document.getElementById('modeSeg').querySelectorAll('button').forEach(b => {
     document.querySelectorAll('#modeSeg button').forEach(x => x.classList.toggle('on', x === b));
     // 모드 표시 힌트
     document.body.classList.toggle('mode-category', editMode === 'category');
-    toast(editMode === 'category' ? '🏷️ 카테고리 편집 모드 — 클릭 = 선택' : '🗑️ 삭제 선택 모드 — 클릭 = 삭제 표시');
+    toast(editMode === 'category' ? '🏷️ 카테고리 편집 모드' : '🗑️ 삭제 선택 모드');
   };
 });
 document.getElementById('tglMarked').addEventListener('change', e => {
