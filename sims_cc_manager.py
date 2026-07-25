@@ -22,14 +22,13 @@ from urllib.parse import urlparse, unquote
 SIMS_ROOT = Path("/Users/bae/Games/Electronic Arts/The Sims 4")
 MODS = SIMS_ROOT / "Mods"
 CC_ROOT = MODS / "CC FeaturedCreators"
-# 앱 캐시는 Sims 폴더 밖(macOS 표준 위치)에 저장 - 게임 데이터 오염 방지
+# 앱 관련 모든 데이터를 Sims 폴더 밖(macOS 표준 위치)에 저장
 APP_STATE = Path.home() / "Library" / "Application Support" / "Sims4CCManager"
 THUMBS_DIR = APP_STATE / "thumbs"
 MANIFEST_PATH = APP_STATE / "manifest.json"
-# 휴지통은 Mods 안(빠른 이동/복원 위해) 유지, 단 dot-prefix라 심즈4가 무시함
-TRASH_DIR = MODS / ".cc_trash"
+TRASH_DIR = APP_STATE / "trash"
 
-# 옛 위치 → 새 위치 마이그레이션
+# 옛 위치들 → 새 위치 마이그레이션
 _OLD_STATE = SIMS_ROOT / ".cc_manager"
 if _OLD_STATE.exists() and not APP_STATE.exists():
     APP_STATE.parent.mkdir(parents=True, exist_ok=True)
@@ -39,6 +38,24 @@ if _OLD_STATE.exists() and not APP_STATE.exists():
 APP_STATE.mkdir(parents=True, exist_ok=True)
 THUMBS_DIR.mkdir(exist_ok=True)
 TRASH_DIR.mkdir(exist_ok=True)
+
+# 옛 휴지통 (Mods 안) → 새 위치로 옮기기
+_OLD_TRASH = MODS / ".cc_trash"
+if _OLD_TRASH.exists():
+    import shutil as _shutil
+    for item in _OLD_TRASH.rglob("*"):
+        if item.is_file():
+            rel = item.relative_to(_OLD_TRASH)
+            dst = TRASH_DIR / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            if not dst.exists():
+                _shutil.move(str(item), str(dst))
+    # 빈 폴더 정리
+    for d in sorted([d for d in _OLD_TRASH.rglob("*") if d.is_dir()], key=lambda p: -len(p.parts)):
+        try: d.rmdir()
+        except OSError: pass
+    try: _OLD_TRASH.rmdir()
+    except OSError: pass
 
 CAS_THUMB_TYPE = 0x3C1AF1F2
 BUILDBUY_THUMB_TYPE = 0x0D338A3A
