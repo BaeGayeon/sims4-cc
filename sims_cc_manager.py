@@ -57,9 +57,17 @@ if _OLD_TRASH.exists():
     try: _OLD_TRASH.rmdir()
     except OSError: pass
 
-CAS_THUMB_TYPE = 0x3C1AF1F2
-BUILDBUY_THUMB_TYPE = 0x0D338A3A
+CAS_THUMB_TYPE = 0x3C1AF1F2       # CAS 썸네일 (표준, 작은 사이즈)
+CAS_THUMB_MEDIUM = 0x0D338A3A     # CAS 썸네일 (중간)
+CAS_THUMB_LARGE = 0x0D338A3B      # CAS 썸네일 (큼)
+BUILDBUY_THUMB_TYPE = 0x08D31226  # Build/Buy 썸네일
+GENERIC_THUMB = 0x00B2D882        # 일반 썸네일 리소스
+PNG_TYPE = 0x2F7D0004             # 임베디드 PNG
 CASP_TYPE = 0x034AEECB
+
+# 썸네일로 인식할 모든 리소스 타입 (확장 후)
+THUMB_TYPES = {CAS_THUMB_TYPE, CAS_THUMB_MEDIUM, CAS_THUMB_LARGE,
+               BUILDBUY_THUMB_TYPE, GENERIC_THUMB, PNG_TYPE}
 
 PORT = 8765
 
@@ -312,21 +320,26 @@ def get_casp_category(pkg_path):
 
 
 def extract_thumbs(pkg_path):
+    """.package 안에서 썸네일 이미지(JPEG 또는 PNG) 추출. yield (data, hash, ext)"""
     seen = set()
     for entry in parse_dbpf(pkg_path):
-        if entry["type"] not in (CAS_THUMB_TYPE, BUILDBUY_THUMB_TYPE):
+        if entry["type"] not in THUMB_TYPES:
             continue
         try:
             data = read_resource(pkg_path, entry)
         except Exception:
             continue
-        if not data.startswith(b"\xff\xd8\xff"):
+        if data.startswith(b"\xff\xd8\xff"):
+            ext = ".jpg"
+        elif data.startswith(b"\x89PNG\r\n\x1a\n"):
+            ext = ".png"
+        else:
             continue
         h = hashlib.md5(data).hexdigest()
         if h in seen:
             continue
         seen.add(h)
-        yield (data, h)
+        yield (data, h, ext)
 
 
 # ─────────── 스캔 ───────────
@@ -409,11 +422,11 @@ def scan_cc(progress_cb=None):
             "casp": is_casp,
             "override": is_override,
         }
-        for jpg_bytes, h in extract_thumbs(pkg):
-            thumb_name = f"{h[:16]}.jpg"
+        for img_bytes, h, ext in extract_thumbs(pkg):
+            thumb_name = f"{h[:16]}{ext}"
             thumb_path = THUMBS_DIR / thumb_name
             if not thumb_path.exists():
-                thumb_path.write_bytes(jpg_bytes)
+                thumb_path.write_bytes(img_bytes)
             item["thumbs"].append(thumb_name)
             total_thumbs += 1
         groups[folder].append(item)
@@ -562,11 +575,11 @@ def list_trash():
             # 트래시 매니페스트에 썸네일 정보 없으면 파일에서 직접 뽑기
             if not thumbs and f.suffix.lower() == ".package":
                 extracted = []
-                for jpg_bytes, h in extract_thumbs(f):
-                    thumb_name = f"{h[:16]}.jpg"
+                for img_bytes, h, ext in extract_thumbs(f):
+                    thumb_name = f"{h[:16]}{ext}"
                     thumb_path = THUMBS_DIR / thumb_name
                     if not thumb_path.exists():
-                        thumb_path.write_bytes(jpg_bytes)
+                        thumb_path.write_bytes(img_bytes)
                     extracted.append(thumb_name)
                 thumbs = extracted
                 # 매니페스트 업데이트
@@ -1802,7 +1815,8 @@ class Handler(BaseHTTPRequestHandler):
             name = path[len("/thumbs/"):]
             fp = THUMBS_DIR / name
             if fp.exists() and fp.is_file():
-                self._send(200, fp.read_bytes(), "image/jpeg")
+                mime = "image/png" if name.lower().endswith(".png") else "image/jpeg"
+                self._send(200, fp.read_bytes(), mime)
             else:
                 self._send(404, "not found")
             return
