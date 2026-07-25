@@ -1703,9 +1703,8 @@ async function deleteSelectedFromTrash() {
 async function postBulkAction() {
   closeTrash();
   await loadManifest();
-  if (confirm('게임에 반영하려면 CC 재스캔이 필요해요. 지금 재스캔할까요?')) {
-    await rescan();
-  }
+  // 매니페스트가 자동 업데이트되므로 재스캔 불필요.
+  // 필요 시 사용자가 상단 '🔄 재스캔' 버튼 수동 클릭.
 }
 
 document.getElementById('search').addEventListener('input', e => {
