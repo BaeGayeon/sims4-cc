@@ -1193,8 +1193,27 @@ function render() {
           };
       div.querySelector('.thumb-img')?.addEventListener('click', clickHandler);
       div.querySelector('.no-thumb')?.addEventListener('click', clickHandler);
-      div.querySelector('.name').addEventListener('click', clickHandler);
       div.querySelector('.sz').addEventListener('click', clickHandler);
+      // 이름 클릭 = 파일명 복사 (확장자 제외) - 검색용
+      const nameEl = div.querySelector('.name');
+      const nameFullEl = div.querySelector('.name-full');
+      const copyName = async (e) => {
+        e.stopPropagation();
+        const clean = it.file.replace(/\\.package$/i, '');
+        try {
+          await navigator.clipboard.writeText(clean);
+          toast(`📋 복사됨: ${clean.slice(0, 40)}${clean.length > 40 ? '…' : ''}`);
+        } catch { toast('복사 실패'); }
+      };
+      nameEl.style.cursor = 'copy';
+      nameEl.title = '클릭하면 파일명 복사 (확장자 제외)';
+      nameEl.addEventListener('click', copyName);
+      if (nameFullEl) {
+        nameFullEl.style.cursor = 'copy';
+        nameFullEl.title = '클릭하면 파일명 복사 (확장자 제외)';
+        nameFullEl.style.pointerEvents = 'auto';
+        nameFullEl.addEventListener('click', copyName);
+      }
       // 우클릭 or cat-icon 클릭 → 카테고리 변경 메뉴
       const catEl = div.querySelector('.cat-icon');
       if (catEl) {
