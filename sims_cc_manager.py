@@ -811,6 +811,10 @@ HTML_PAGE = """<!DOCTYPE html>
   .progress-bar > div { height: 100%; background: #4a90e2; transition: width .3s; }
   dialog { border: none; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.2); padding: 20px; max-width: 500px; }
   dialog::backdrop { background: rgba(0,0,0,.5); }
+  /* 모달 우측 상단 X 닫기 버튼 통일 스타일 */
+  .dlg-close { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; padding: 0; font-size: 14px; border-radius: 50%; background: white; border: 1px solid #ddd; cursor: pointer; z-index: 10; }
+  .dlg-close:hover { background: #f4f4f4; }
+  dialog { position: relative; }
   .trash-item { padding: 6px 8px; border-bottom: 1px solid #eee; display: flex; gap: 8px; font-size: 12px; align-items: center; }
   .trash-item input { margin: 0; }
 </style>
@@ -893,12 +897,12 @@ HTML_PAGE = """<!DOCTYPE html>
   <button onclick="performDelete()" class="primary">🗑️ 휴지통으로 이동</button>
 </div>
 <dialog id="marked-dialog" style="max-width:720px; width:90vw;">
+  <button class="dlg-close" onclick="document.getElementById('marked-dialog').close()">✕</button>
   <h3>🗑️ 삭제 표시된 아이템 <span id="marked-summary" style="font-weight:normal; color:#666; font-size:13px;"></span></h3>
   <div style="max-height:60vh; overflow-y:auto; margin:8px 0; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa;">
     <div id="marked-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:6px;"></div>
   </div>
   <div style="display:flex; gap:8px; justify-content:flex-end;">
-    <button onclick="document.getElementById('marked-dialog').close()">닫기</button>
     <button onclick="clearMarksFromDialog()">전체 표시 해제</button>
     <button onclick="performDeleteFromDialog()" class="primary">🗑️ 휴지통으로 이동</button>
   </div>
@@ -906,9 +910,9 @@ HTML_PAGE = """<!DOCTYPE html>
 <div id="toast" class="toast"></div>
 <div id="ctxMenu"></div>
 <dialog id="help-dialog" style="max-width: 760px; width: 90vw; padding: 0;">
-  <div style="padding: 20px 24px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between;">
+  <button class="dlg-close" onclick="document.getElementById('help-dialog').close()">✕</button>
+  <div style="padding: 20px 24px; border-bottom: 1px solid #eee;">
     <h2 style="margin: 0; font-size: 18px;">🎮 CC Manager 사용법</h2>
-    <button onclick="document.getElementById('help-dialog').close()" style="border-radius: 50%; width: 30px; height: 30px; padding: 0; font-size: 14px;">✕</button>
   </div>
   <div style="padding: 20px 24px; max-height: 70vh; overflow-y: auto; font-size: 13px; line-height: 1.6;">
 
@@ -999,6 +1003,7 @@ HTML_PAGE = """<!DOCTYPE html>
   <button onclick="clearBulkSel()">선택 해제</button>
 </div>
 <dialog id="failed-dialog" style="max-width: 600px; width: 90vw;">
+  <button class="dlg-close" onclick="document.getElementById('failed-dialog').close()">✕</button>
   <h3>⚠️ 일부 파일 이동 실패</h3>
   <div id="failed-summary" style="color: #666; font-size: 13px; margin-bottom: 8px;"></div>
   <div style="max-height: 300px; overflow-y: auto; margin: 8px 0; border: 1px solid #eee; border-radius: 6px; padding: 8px; background: #fafafa;">
@@ -1006,10 +1011,10 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
   <div style="display: flex; gap: 8px; justify-content: flex-end;">
     <button onclick="clearFailedMarks()">실패한 것 표시 해제</button>
-    <button onclick="document.getElementById('failed-dialog').close()">닫기</button>
   </div>
 </dialog>
 <dialog id="trash-dialog" style="max-width: 720px; width: 90vw;">
+  <button class="dlg-close" onclick="closeTrash()">✕</button>
   <h3>휴지통 <span id="trash-summary" style="font-weight: normal; color: #666; font-size: 13px;"></span></h3>
   <div style="display: flex; gap: 8px; margin: 8px 0; align-items: center;">
     <button onclick="trashSelectAll(true)">전체 선택</button>
@@ -1020,7 +1025,6 @@ HTML_PAGE = """<!DOCTYPE html>
     <div id="trash-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px;"></div>
   </div>
   <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
-    <button onclick="closeTrash()">닫기</button>
     <button onclick="restoreAll()" class="blue">↩️ 전체 복원</button>
     <button onclick="restoreSelected()" class="blue">↩️ 선택 복원</button>
     <button onclick="deleteSelectedFromTrash()" class="primary">🗑️ 선택 완전 삭제</button>
