@@ -836,6 +836,7 @@ HTML_PAGE = """<!DOCTYPE html>
       <div class="seg" id="groupSeg">
         <button data-v="creator" class="on">폴더별</button>
         <button data-v="category">카테고리별</button>
+        <button data-v="date">날짜별</button>
       </div>
     </div>
     <div class="group">
@@ -1174,19 +1175,55 @@ function matchesCatFilter(cats) {
   return (cats || []).some(c => allowedSubs.includes(c));
 }
 
+// 날짜 버킷 정의: [순서, 라벨, cutoff(초 단위 이내면 이 버킷)]
+const DATE_BUCKETS = [
+  { key: 'today',    label: '오늘',        maxAgeS: 86400 },
+  { key: 'week',     label: '이번 주',     maxAgeS: 86400 * 7 },
+  { key: 'month',    label: '이번 달',     maxAgeS: 86400 * 30 },
+  { key: '3month',   label: '3개월 이내',   maxAgeS: 86400 * 90 },
+  { key: '6month',   label: '6개월 이내',   maxAgeS: 86400 * 180 },
+  { key: 'year',     label: '1년 이내',     maxAgeS: 86400 * 365 },
+  { key: '2year',    label: '1~2년 전',     maxAgeS: 86400 * 365 * 2 },
+  { key: '3year',    label: '2~3년 전',     maxAgeS: 86400 * 365 * 3 },
+  { key: 'old',      label: '3년 이상 전',   maxAgeS: Infinity },
+  { key: 'unknown',  label: '(날짜 정보 없음)', maxAgeS: Infinity },
+];
+
+function dateBucket(mtime) {
+  if (!mtime) return DATE_BUCKETS[DATE_BUCKETS.length - 1];  // unknown
+  const nowS = Date.now() / 1000;
+  const ageS = nowS - mtime;
+  for (const b of DATE_BUCKETS) {
+    if (b.key === 'unknown') continue;
+    if (ageS <= b.maxAgeS) return b;
+  }
+  return DATE_BUCKETS[DATE_BUCKETS.length - 2];  // old
+}
+
 function buildGroups() {
   const folders = MANIFEST.folders || MANIFEST.creators || [];
   if (groupBy === 'category') {
     const groups = {};
     for (const c of folders) {
       for (const it of c.items) {
-        // 대표 카테고리 하나에만 배정 (중복 카운트 방지)
         const cat = it.primary_cat || (it.cats && it.cats[0]) || '기타';
         if (!groups[cat]) groups[cat] = { name: cat, items: [] };
         groups[cat].items.push({...it, _creator: c.name});
       }
     }
     return Object.values(groups);
+  }
+  if (groupBy === 'date') {
+    const groups = {};
+    for (const c of folders) {
+      for (const it of c.items) {
+        const b = dateBucket(it.mtime);
+        if (!groups[b.key]) groups[b.key] = { name: b.label, _bucketOrder: DATE_BUCKETS.indexOf(b), items: [] };
+        groups[b.key].items.push({...it, _creator: c.name});
+      }
+    }
+    // 최신 → 옛날 순 고정
+    return Object.values(groups).sort((a, b) => a._bucketOrder - b._bucketOrder);
   }
   return folders.map(c => ({...c}));
 }
@@ -1204,7 +1241,10 @@ function render() {
   let totalItems = 0, visibleItems = 0;
   const creators = buildGroups();
   creators.forEach(c => c._stats = creatorStats(c));
-  if (sortBy === 'size') creators.sort((a,b) => b._stats.size - a._stats.size);
+  // 날짜별 그룹은 최신→옛 고정 순서 (buildGroups에서 이미 정렬됨)
+  if (groupBy === 'date') {
+    // no re-sort
+  } else if (sortBy === 'size') creators.sort((a,b) => b._stats.size - a._stats.size);
   else if (sortBy === 'count') creators.sort((a,b) => b._stats.count - a._stats.count);
   else if (sortBy === 'recent') creators.sort((a,b) => b._stats.maxMtime - a._stats.maxMtime);
   else if (sortBy === 'oldest') creators.sort((a,b) => a._stats.minMtime - b._stats.minMtime);
