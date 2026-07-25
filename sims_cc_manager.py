@@ -750,10 +750,10 @@ HTML_PAGE = """<!DOCTYPE html>
   body.mode-category .item:not(.trashed):hover { border-color: #4a90e2; cursor: cell; }
   body.mode-category .item:not(.trashed).marked { opacity: 0.5; }
   .item.selected { border-color: #4a90e2 !important; box-shadow: 0 0 0 2px #4a90e2, 0 0 8px rgba(74,144,226,.5); }
-  .item.selected::before { content: '✓'; position: absolute; top: 4px; left: 4px; background: #4a90e2; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; z-index: 3; }
-  /* 삭제 표시 + 다중선택 둘 다인 경우: 파란 외곽 + 빨간 배경 유지 */
+  .item.selected::before { content: '✓'; position: absolute; top: 4px; left: 4px; background: #4a90e2; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; z-index: 3; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  /* 삭제표시 + 다중선택 둘 다: 파란 테두리 + 빨간 배경 tint 만 (별도 배지 X) */
   .item.marked.selected { background: #ffe8e8 !important; }
-  .item.marked.selected::after { content: '🗑️+📌'; position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,.9); padding: 1px 5px; border-radius: 10px; font-size: 11px; z-index: 4; }
+  .item.marked.selected .thumb-img { filter: brightness(0.9) saturate(0.85); }
   .chip.drop-target { background: #ffe066 !important; color: #333 !important; border-color: #f0a500 !important; transform: scale(1.1); }
   .item.dragging { opacity: 0.4; }
   #bulkBar { position: fixed; bottom: 44px; left: 0; right: 0; background: #333; color: white; padding: 8px 16px; z-index: 99; display: none; align-items: center; gap: 12px; box-shadow: 0 -2px 8px rgba(0,0,0,.2); }
@@ -940,10 +940,11 @@ HTML_PAGE = """<!DOCTYPE html>
     <h3 style="color: #333;">🤔 삭제 표시랑 다중선택이 같이 있으면?</h3>
     <p>둘은 <b>독립된 상태</b>입니다. 같은 아이템에 둘 다 걸릴 수 있어요.</p>
     <ul>
-      <li>파란 테두리 + 빨간 배경 + 🗑️+📌 배지 → 두 상태 모두</li>
+      <li>파란 테두리 (다중선택) + 빨간 배경 (삭제표시) → 두 상태 모두</li>
       <li>카테고리 지정해도 삭제 표시는 유지됨 (반대도 마찬가지)</li>
-      <li>우클릭 → 다중선택 있으면 <b>선택된 것 전체</b> 카테고리 변경.
-        선택 없으면 그 하나만.</li>
+      <li><b>우클릭 = 항상 그 아이템 하나만</b> 카테고리 변경</li>
+      <li><b>다중선택된 것 전체를 변경하려면</b> 하단 bulk 바의
+        드롭다운 사용, 또는 카테고리 chip으로 드래그</li>
     </ul>
 
     <h3 style="color: #333;">📁 상태 표시</h3>
@@ -1332,20 +1333,14 @@ function render() {
       if (catEl) {
         catEl.addEventListener('click', (e) => {
           e.stopPropagation();
-          const targetPaths = bulkSel.size > 0 && bulkSel.has(it.path)
-            ? [...bulkSel]
-            : [it.path];
-          showCategoryMenu(e, targetPaths, it.primary_cat);
+          // 우클릭/카테고리 아이콘 클릭은 항상 그 아이템 하나만
+          // (다중 적용은 하단 bulk 바나 드래그 앤 드롭 사용)
+          showCategoryMenu(e, [it.path], it.primary_cat);
         });
       }
       div.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        // 다중선택 상태에서 우클릭 = 선택된 것 전체에 적용
-        // 다중선택 없으면 = 그 아이템 하나만
-        const targetPaths = bulkSel.size > 0 && bulkSel.has(it.path)
-          ? [...bulkSel]
-          : [it.path];
-        showCategoryMenu(e, targetPaths, it.primary_cat);
+        showCategoryMenu(e, [it.path], it.primary_cat);
       });
       // Drag: 카테고리 chip으로 드래그해서 카테고리 지정
       div.addEventListener('dragstart', (e) => {
