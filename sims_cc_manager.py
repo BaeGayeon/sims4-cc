@@ -726,11 +726,12 @@ HTML_PAGE = """<!DOCTYPE html>
   .creator-sub { padding: 0 6px 2px; font-size: 9px; color: #999; font-style: italic; }
   .item img { display: block; width: 100%; height: auto; }
   .item .no-thumb { padding: 40px 8px; text-align: center; color: #999; font-size: 11px; background: #eee; }
-  .item .name { padding: 3px 6px; font-size: 10px; color: #555; word-break: break-all; line-height: 1.3; height: 2.6em; overflow: hidden; }
-  /* 전체 파일명: 원본 위치(item 하단)에서 위로 확장 - 아래로 잘리지 않음, 원본 대체 */
-  .item .name-full { display: none; position: absolute; bottom: 0; left: 0; right: 0; padding: 3px 6px; font-size: 10px; color: #222; word-break: break-all; line-height: 1.3; background: white; z-index: 100; box-shadow: 0 -1px 4px rgba(0,0,0,.15); }
+  /* 기본: 2줄까지 잘리지 않고 항상 완전히 보임 (display -webkit-box + line-clamp) */
+  .item .name { padding: 3px 6px; font-size: 10px; color: #555; word-break: break-all; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; min-height: 2.7em; }
+  /* 3줄 이상 긴 이름만 hover 시 팝오버로 위쪽 확장 - 원본은 그대로 유지, 그 위에 덮음 */
+  .item .name-full { display: none; position: absolute; bottom: 0; left: 0; right: 0; padding: 3px 6px; font-size: 10px; color: #222; word-break: break-all; line-height: 1.35; background: white; z-index: 100; box-shadow: 0 -2px 6px rgba(0,0,0,.15); border-radius: 0 0 2px 2px; }
+  /* JS로 짧은 이름은 name-full 을 아예 안 그리게 함 */
   .item:hover .name-full { display: block; }
-  .item:hover .name { visibility: hidden; }  /* 원본 숨겨서 중복 방지 */
   .item .sz { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.6); color: white; padding: 1px 5px; font-size: 10px; border-radius: 3px; pointer-events: none; z-index: 2; }
   .item.selected::before { left: 4px; }
   .item.selected .sz { display: none; }
@@ -1104,7 +1105,10 @@ function render() {
       const catIcon = it.cat_icon ? `<div class="cat-icon${overrideClass}" title="${escapeHtml(catTitle + ': ' + (it.cats||[]).join(', '))}" data-item-path="${escapeHtml(it.path)}" data-item-cat="${escapeHtml(it.primary_cat||'')}">${it.cat_icon}</div>` : '';
       const creatorSubtitle = it._creator ? `<div class="creator-sub">${escapeHtml(it._creator)}</div>` : '';
       div.dataset.thumbs = JSON.stringify(it.thumbs);
-      div.innerHTML = thumbHtml + trashBadge + catIcon + `<div class="sz">${human(it.size)}</div>${creatorSubtitle}<div class="name">${escapeHtml(it.file)}</div><div class="name-full">${escapeHtml(it.file)}</div>`;
+      // 44자 초과 시 hover 팝오버로 전체 이름 보여줌 (짧으면 name-full 안 만듦)
+      const needsPopover = it.file.length > 44;
+      const nameFull = needsPopover ? `<div class="name-full">${escapeHtml(it.file)}</div>` : '';
+      div.innerHTML = thumbHtml + trashBadge + catIcon + `<div class="sz">${human(it.size)}</div>${creatorSubtitle}<div class="name">${escapeHtml(it.file)}</div>${nameFull}`;
       const clickHandler = it.trashed
         ? async () => {
             if (!confirm(`복원할까요?\\n${it.file}`)) return;
