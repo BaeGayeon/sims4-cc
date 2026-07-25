@@ -508,6 +508,20 @@ def _find_thumbs_for(path):
     return []
 
 
+def _update_manifest_items(paths, updates):
+    """매니페스트의 특정 파일들에 필드 업데이트 (재스캔 없이 즉시 반영)."""
+    m = load_manifest()
+    if not m: return
+    path_set = set(paths)
+    trash_rel_set = set()  # 휴지통 안 상대 경로도 매칭용
+    for folder in m.get("folders", []) + m.get("creators", []):
+        for it in folder.get("items", []):
+            if it["path"] in path_set or it.get("trash_path") in path_set:
+                for k, v in updates.items():
+                    it[k] = v
+    MANIFEST_PATH.write_text(json.dumps(m, ensure_ascii=False))
+
+
 def move_to_trash(rel_paths):
     moved, failed = [], []
     trash_m = _load_trash_manifest()
@@ -516,7 +530,6 @@ def move_to_trash(rel_paths):
         if not src.exists():
             failed.append({"path": rel, "reason": "파일 없음"})
             continue
-        # 썸네일 정보 저장 (삭제 전에)
         thumbs = _find_thumbs_for(rel)
         dst = TRASH_DIR / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
@@ -536,16 +549,20 @@ def move_to_trash(rel_paths):
         except Exception as e:
             failed.append({"path": rel, "reason": str(e)})
     _save_trash_manifest(trash_m)
+    # 매니페스트에 상태 반영 (재스캔 안 해도 목록에 표시됨)
+    if moved:
+        _update_manifest_items(moved, {"trashed": True, "perma_deleted": False})
     return {"moved": moved, "failed": failed}
 
 
 def restore_from_trash(rel_paths):
     restored, failed = [], []
+    restored_originals = []
     trash_m = _load_trash_manifest()
     for rel in rel_paths:
         src = TRASH_DIR / rel
         info = trash_m.get(rel, {})
-        original = info.get("original_path", rel)  # 원본 경로 있으면 그리로 복원
+        original = info.get("original_path", rel)
         dst = MODS / original
         if not src.exists():
             failed.append({"path": rel, "reason": "휴지통에 없음"})
@@ -555,9 +572,13 @@ def restore_from_trash(rel_paths):
             shutil.move(str(src), str(dst))
             trash_m.pop(rel, None)
             restored.append(rel)
+            restored_originals.append(original)
         except Exception as e:
             failed.append({"path": rel, "reason": str(e)})
     _save_trash_manifest(trash_m)
+    # 복원 → trashed 플래그 제거
+    if restored_originals:
+        _update_manifest_items(restored_originals, {"trashed": False, "perma_deleted": False})
     return {"restored": restored, "failed": failed}
 
 
@@ -605,6 +626,7 @@ def delete_from_trash(rel_paths):
     """휴지통 안의 특정 파일들만 완전 삭제"""
     count = 0
     total = 0
+    perma_originals = []
     trash_m = _load_trash_manifest()
     for rel in rel_paths:
         fp = TRASH_DIR / rel
@@ -613,16 +635,22 @@ def delete_from_trash(rel_paths):
                 total += fp.stat().st_size
                 fp.unlink()
                 count += 1
-                trash_m.pop(rel, None)
+                info = trash_m.pop(rel, {})
+                orig = info.get("original_path", rel)
+                perma_originals.append(orig)
             except OSError:
                 pass
     _save_trash_manifest(trash_m)
+    if perma_originals:
+        _update_manifest_items(perma_originals, {"trashed": False, "perma_deleted": True})
     return {"count": count, "size_freed": total}
 
 
 def empty_trash():
     count = 0
     total = 0
+    trash_m = _load_trash_manifest()
+    perma_originals = [info.get("original_path", rel) for rel, info in trash_m.items()]
     for f in TRASH_DIR.rglob("*"):
         if f.is_file():
             total += f.stat().st_size
@@ -634,6 +662,10 @@ def empty_trash():
             d.rmdir()
         except OSError:
             pass
+    _save_trash_manifest({})
+    # 매니페스트에 perma_deleted 반영
+    if perma_originals:
+        _update_manifest_items(perma_originals, {"trashed": False, "perma_deleted": True})
     return {"count": count, "size_freed": total}
 
 
@@ -725,9 +757,12 @@ HTML_PAGE = """<!DOCTYPE html>
   body.has-bulk { padding-bottom: 108px; }
   #bulkBar select { padding: 5px 8px; border-radius: 4px; }
   #bulkBar .info { flex: 1; font-size: 14px; }
-  .item.trashed { opacity: 0.55; border-color: #999; background: #f0f0f0; }
-  .item.trashed .thumb-img { filter: grayscale(0.6); }
-  .trash-badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.75); color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; }
+  .item.trashed { opacity: 0.6; border-color: #999; background: #f0f0f0; }
+  .item.trashed .thumb-img { filter: grayscale(0.7); }
+  .item.perma-deleted { opacity: 0.4; border-color: #600; background: #f5eaea; }
+  .item.perma-deleted .thumb-img { filter: grayscale(1) brightness(0.6); }
+  .item.perma-deleted .name, .item.perma-deleted .name-full { text-decoration: line-through; color: #999; }
+  .trash-badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.75); color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; z-index: 3; }
   .cat-icon { position: absolute; bottom: 26px; right: 4px; background: rgba(255,255,255,.92); padding: 1px 5px; border-radius: 10px; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,.15); cursor: context-menu; z-index: 2; }
   .cat-icon.override { background: #ffd700; box-shadow: 0 0 0 1px #b8860b; }
   #ctxMenu { position: fixed; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.15); padding: 4px; z-index: 1000; max-height: 400px; overflow-y: auto; min-width: 180px; display: none; }
@@ -815,6 +850,8 @@ HTML_PAGE = """<!DOCTYPE html>
     <div class="toggle-group">
       <label class="switch"><input type="checkbox" id="tglMarked"> 🗑️ 지울 것만</label>
       <label class="switch"><input type="checkbox" id="tglOverride"> 🖐️ 수동 지정만</label>
+      <label class="switch"><input type="checkbox" id="tglHideTrashed"> 휴지통 항목 숨기기</label>
+      <label class="switch"><input type="checkbox" id="tglHidePerma" checked> 완전삭제 숨기기</label>
       <label class="switch"><input type="checkbox" id="tglCollapsed"> 모두 접기</label>
     </div>
     <div class="divider"></div>
@@ -901,6 +938,8 @@ let subFilter = '';
 let groupBy = 'creator';
 let collapsedMode = false;
 let showOverrideOnly = false;
+let hideTrashed = false;
+let hidePerma = true;
 let editMode = 'delete';  // 'delete' | 'category'
 
 function human(bytes) {
@@ -1062,6 +1101,8 @@ function render() {
   for (const c of creators) {
     let items = c.items.filter(it => {
       totalItems++;
+      if (hidePerma && it.perma_deleted) return false;
+      if (hideTrashed && it.trashed) return false;
       if (showMarkedOnly && !state[it.path]) return false;
       if (showOverrideOnly && !it.override) return false;
       if (!matchesCatFilter(it.cats)) return false;
@@ -1091,11 +1132,12 @@ function render() {
     for (const it of items) {
       const div = document.createElement('div');
       const classes = ['item'];
-      if (it.trashed) classes.push('trashed');
+      if (it.perma_deleted) classes.push('perma-deleted');
+      else if (it.trashed) classes.push('trashed');
       else if (state[it.path]) classes.push('marked');
       if (bulkSel.has(it.path)) classes.push('selected');
       div.className = classes.join(' ');
-      div.draggable = !it.trashed;
+      div.draggable = !it.trashed && !it.perma_deleted;
       div.dataset.path = it.path;
       div.dataset.thumbIdx = '0';
       div.title = (it.trashed ? '휴지통에 있음 (클릭 → 복원)\\n' : '') + it.file + '\\n' + human(it.size);
@@ -1112,7 +1154,9 @@ function render() {
       } else {
         thumbHtml = `<div class="no-thumb">썸네일 없음</div>`;
       }
-      const trashBadge = it.trashed ? '<div class="trash-badge">🗑️ 휴지통</div>' : '';
+      const trashBadge = it.perma_deleted ? '<div class="trash-badge" style="background:rgba(60,0,0,.85);">✖ 완전삭제</div>'
+                        : it.trashed ? '<div class="trash-badge">🗑️ 휴지통</div>'
+                        : '';
       const overrideClass = it.override ? ' override' : '';
       const catTitle = it.override ? '수동 지정' : (it.casp ? 'CASP 파싱' : '파일명 추측') + ' (우클릭으로 변경)';
       const catIcon = it.cat_icon ? `<div class="cat-icon${overrideClass}" title="${escapeHtml(catTitle + ': ' + (it.cats||[]).join(', '))}" data-item-path="${escapeHtml(it.path)}" data-item-cat="${escapeHtml(it.primary_cat||'')}">${it.cat_icon}</div>` : '';
@@ -1122,13 +1166,15 @@ function render() {
       const needsPopover = it.file.length > 44;
       const nameFull = needsPopover ? `<div class="name-full">${escapeHtml(it.file)}</div>` : '';
       div.innerHTML = thumbHtml + trashBadge + catIcon + `<div class="sz">${human(it.size)}</div>${creatorSubtitle}<div class="name">${escapeHtml(it.file)}</div>${nameFull}`;
-      const clickHandler = it.trashed
+      const clickHandler = it.perma_deleted
+        ? () => toast('❌ 완전삭제된 파일입니다 (되돌릴 수 없음)')
+        : it.trashed
         ? async () => {
-            if (!confirm(`복원할까요?\\n${it.file}`)) return;
+            if (!confirm(`휴지통에서 복원할까요?\\n${it.file}`)) return;
             const res = await fetch('/api/restore', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({paths: [it.trash_path]}),
+              body: JSON.stringify({paths: [it.trash_path || it.path]}),
             });
             await res.json();
             toast('↩️ 복원됨');
@@ -1589,6 +1635,14 @@ document.getElementById('tglCollapsed').addEventListener('change', e => {
 });
 document.getElementById('tglOverride').addEventListener('change', e => {
   showOverrideOnly = e.target.checked;
+  render();
+});
+document.getElementById('tglHideTrashed').addEventListener('change', e => {
+  hideTrashed = e.target.checked;
+  render();
+});
+document.getElementById('tglHidePerma').addEventListener('change', e => {
+  hidePerma = e.target.checked;
   render();
 });
 
