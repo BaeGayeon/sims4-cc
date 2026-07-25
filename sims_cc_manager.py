@@ -749,6 +749,9 @@ HTML_PAGE = """<!DOCTYPE html>
   body.mode-category .item:not(.trashed).marked { opacity: 0.5; }
   .item.selected { border-color: #4a90e2 !important; box-shadow: 0 0 0 2px #4a90e2, 0 0 8px rgba(74,144,226,.5); }
   .item.selected::before { content: '✓'; position: absolute; top: 4px; left: 4px; background: #4a90e2; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; z-index: 3; }
+  /* 삭제 표시 + 다중선택 둘 다인 경우: 파란 외곽 + 빨간 배경 유지 */
+  .item.marked.selected { background: #ffe8e8 !important; }
+  .item.marked.selected::after { content: '🗑️+📌'; position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,.9); padding: 1px 5px; border-radius: 10px; font-size: 11px; z-index: 4; }
   .chip.drop-target { background: #ffe066 !important; color: #333 !important; border-color: #f0a500 !important; transform: scale(1.1); }
   .item.dragging { opacity: 0.4; }
   #bulkBar { position: fixed; bottom: 44px; left: 0; right: 0; background: #333; color: white; padding: 8px 16px; z-index: 99; display: none; align-items: center; gap: 12px; box-shadow: 0 -2px 8px rgba(0,0,0,.2); }
@@ -926,6 +929,15 @@ HTML_PAGE = """<!DOCTYPE html>
       <li>또는 선택된 아이템을 <b>카테고리 chip</b>으로 드래그</li>
       <li>수동 지정한 아이템은 노란 테두리 아이콘 표시 (재스캔 시 유지됨)</li>
       <li><b>우클릭</b> = 아이템 단일 카테고리 변경 (어느 모드에서든)</li>
+    </ul>
+
+    <h3 style="color: #333;">🤔 삭제 표시랑 다중선택이 같이 있으면?</h3>
+    <p>둘은 <b>독립된 상태</b>입니다. 같은 아이템에 둘 다 걸릴 수 있어요.</p>
+    <ul>
+      <li>파란 테두리 + 빨간 배경 + 🗑️+📌 배지 → 두 상태 모두</li>
+      <li>카테고리 지정해도 삭제 표시는 유지됨 (반대도 마찬가지)</li>
+      <li>우클릭 → 다중선택 있으면 <b>선택된 것 전체</b> 카테고리 변경.
+        선택 없으면 그 하나만.</li>
     </ul>
 
     <h3 style="color: #333;">📁 상태 표시</h3>
@@ -1301,12 +1313,20 @@ function render() {
       if (catEl) {
         catEl.addEventListener('click', (e) => {
           e.stopPropagation();
-          showCategoryMenu(e, it.path, it.primary_cat);
+          const targetPaths = bulkSel.size > 0 && bulkSel.has(it.path)
+            ? [...bulkSel]
+            : [it.path];
+          showCategoryMenu(e, targetPaths, it.primary_cat);
         });
       }
       div.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        showCategoryMenu(e, it.path, it.primary_cat);
+        // 다중선택 상태에서 우클릭 = 선택된 것 전체에 적용
+        // 다중선택 없으면 = 그 아이템 하나만
+        const targetPaths = bulkSel.size > 0 && bulkSel.has(it.path)
+          ? [...bulkSel]
+          : [it.path];
+        showCategoryMenu(e, targetPaths, it.primary_cat);
       });
       // Drag: 카테고리 chip으로 드래그해서 카테고리 지정
       div.addEventListener('dragstart', (e) => {
@@ -1403,17 +1423,22 @@ function openHelp() {
   document.getElementById('help-dialog').showModal();
 }
 
-function showCategoryMenu(event, path, currentCat) {
+function showCategoryMenu(event, pathOrPaths, currentCat) {
+  // 배열 or 단일 경로 둘 다 받음
+  const paths = Array.isArray(pathOrPaths) ? pathOrPaths : [pathOrPaths];
+  const isBulk = paths.length > 1;
   const menu = document.getElementById('ctxMenu');
   const cats = MANIFEST.all_categories || [];
-  let html = `<div class="ctx-header">카테고리 변경 <span style="color:#999">(${path.split('/').pop()})</span></div>`;
+  const label = isBulk
+    ? `<b style="color:#4a90e2;">📌 다중 ${paths.length}개</b> 카테고리 변경`
+    : `카테고리 변경 <span style="color:#999">(${paths[0].split('/').pop()})</span>`;
+  let html = `<div class="ctx-header">${label}</div>`;
   for (const c of cats) {
-    const cls = c.name === currentCat ? ' current' : '';
+    const cls = !isBulk && c.name === currentCat ? ' current' : '';
     html += `<div class="ctx-item${cls}" data-cat="${escapeHtml(c.name)}">${c.icon} ${c.name}</div>`;
   }
   html += `<div class="ctx-item reset" data-cat="">↺ 수동 지정 해제 (자동 재분류)</div>`;
   menu.innerHTML = html;
-  // 위치
   const x = Math.min(event.clientX, window.innerWidth - 200);
   const y = Math.min(event.clientY, window.innerHeight - 300);
   menu.style.left = x + 'px';
@@ -1423,18 +1448,7 @@ function showCategoryMenu(event, path, currentCat) {
     el.onclick = async () => {
       menu.style.display = 'none';
       const cat = el.dataset.cat;
-      const res = await fetch('/api/set-category', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({path, category: cat}),
-      });
-      await res.json();
-      if (cat) {
-        toast(`✅ "${path.split('/').pop()}" → ${cat}`);
-      } else {
-        toast('↺ 수동 지정 해제 (재스캔 시 반영됨)');
-      }
-      await loadManifest();
+      await applyToPaths(paths, cat || '__reset__');
     };
   });
 }
