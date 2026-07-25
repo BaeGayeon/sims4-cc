@@ -726,10 +726,11 @@ HTML_PAGE = """<!DOCTYPE html>
   .creator-sub { padding: 0 6px 2px; font-size: 9px; color: #999; font-style: italic; }
   .item img { display: block; width: 100%; height: auto; }
   .item .no-thumb { padding: 40px 8px; text-align: center; color: #999; font-size: 11px; background: #eee; }
-  .item .name { padding: 3px 6px; font-size: 10px; color: #555; word-break: break-all; line-height: 1.3; max-height: 2.6em; overflow: hidden; }
-  /* 전체 파일명은 팝오버 - 레이아웃 흔들지 않음 */
-  .item .name-full { display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 2px; background: white; padding: 6px 8px; font-size: 11px; color: #222; word-break: break-all; line-height: 1.4; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.2); z-index: 200; pointer-events: none; }
+  .item .name { padding: 3px 6px; font-size: 10px; color: #555; word-break: break-all; line-height: 1.3; height: 2.6em; overflow: hidden; }
+  /* 전체 파일명: 원본 위치(item 하단)에서 위로 확장 - 아래로 잘리지 않음, 원본 대체 */
+  .item .name-full { display: none; position: absolute; bottom: 0; left: 0; right: 0; padding: 3px 6px; font-size: 10px; color: #222; word-break: break-all; line-height: 1.3; background: white; z-index: 100; box-shadow: 0 -1px 4px rgba(0,0,0,.15); }
   .item:hover .name-full { display: block; }
+  .item:hover .name { visibility: hidden; }  /* 원본 숨겨서 중복 방지 */
   .item .sz { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.6); color: white; padding: 1px 5px; font-size: 10px; border-radius: 3px; pointer-events: none; z-index: 2; }
   .item.selected::before { left: 4px; }
   .item.selected .sz { display: none; }
