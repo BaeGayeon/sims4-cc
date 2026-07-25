@@ -692,7 +692,7 @@ HTML_PAGE = """<!DOCTYPE html>
   .item.trashed { opacity: 0.55; border-color: #999; background: #f0f0f0; }
   .item.trashed .thumb-img { filter: grayscale(0.6); }
   .trash-badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.75); color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; }
-  .cat-icon { position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,.9); padding: 1px 5px; border-radius: 10px; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,.15); cursor: context-menu; }
+  .cat-icon { position: absolute; bottom: 26px; right: 4px; background: rgba(255,255,255,.92); padding: 1px 5px; border-radius: 10px; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,.15); cursor: context-menu; z-index: 2; }
   .cat-icon.override { background: #ffd700; box-shadow: 0 0 0 1px #b8860b; }
   #ctxMenu { position: fixed; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.15); padding: 4px; z-index: 1000; max-height: 400px; overflow-y: auto; min-width: 180px; display: none; }
   #ctxMenu .ctx-header { padding: 4px 8px; font-size: 11px; color: #666; border-bottom: 1px solid #eee; margin-bottom: 4px; }
