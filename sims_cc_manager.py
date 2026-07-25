@@ -612,9 +612,10 @@ def empty_trash():
 HTML_PAGE = """<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <title>Sims 4 CC Manager</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/static/woff2/SUITE.css">
 <style>
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #f5f5f5; color: #222; }
+  body { font-family: 'SUITE Variable', 'SUITE', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #f5f5f5; color: #222; }
   header { position: sticky; top: 0; background: white; border-bottom: 1px solid #ddd; padding: 8px 16px; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   .title-row { display: flex; align-items: center; gap: 12px; }
   .title-row h1 { margin: 0; font-size: 16px; flex-shrink: 0; }
