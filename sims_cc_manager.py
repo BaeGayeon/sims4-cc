@@ -859,8 +859,8 @@ HTML_PAGE = """<!DOCTYPE html>
       <label class="switch"><input type="checkbox" id="tglCollapsed"> 모두 접기</label>
     </div>
     <div class="divider"></div>
-    <button onclick="selectAllFiltered()" title="지금 화면에 보이는 아이템 모두를 다중선택에 추가">☑️ 보이는 것 모두 선택</button>
-    <button onclick="clearBulkSel()" title="다중선택(파란 테두리) 전체 해제">▢ 다중선택 해제</button>
+    <button onclick="selectAllFiltered()" title="지금 화면에 보이는 아이템 모두를 다중선택에 추가">☑️ 전체 선택</button>
+    <button onclick="clearBulkSel()" title="다중선택(파란 테두리) 전체 해제">▢ 선택 해제</button>
     <div class="divider"></div>
     <button onclick="clearMarks()" title="삭제 표시(빨간 테두리) 전체 해제">🗑️ 삭제표시 전체 해제</button>
   </div>
@@ -1127,7 +1127,7 @@ function render() {
         <span class="creator-count">${items.length}개 · ${human(c._stats.size)}${markedInCreator ? ` <span class="badge warn">🗑️ ${markedInCreator}</span>`:''}</span>
         <div class="creator-actions">
           <button onclick="markCreator('${escapeAttr(c.name)}', true)" title="이 폴더 전체를 삭제 대상으로 표시">🗑️ 폴더 전체 삭제표시</button>
-          <button onclick="markCreator('${escapeAttr(c.name)}', false)" title="이 폴더의 삭제 표시 전체 해제">✕ 폴더 표시 해제</button>
+          <button onclick="markCreator('${escapeAttr(c.name)}', false)" title="이 폴더의 삭제 표시 전체 해제">✕ 폴더 전체 표시 해제</button>
         </div>
       </div>
       <div class="grid"></div>
