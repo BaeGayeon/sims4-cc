@@ -571,9 +571,13 @@ def _compute_stats():
         ({"name": n, "count": v["count"], "size": v["size"]} for n, v in cats.items()),
         key=lambda x: -x["count"]
     )
+    total_thumbs = sum(len(it.get("thumbs", [])) for f in folders for it in f.get("items", []))
+    avg_size = (total_size / total_files) if total_files else 0
     return {
         "total_files": total_files,
         "total_size": total_size,
+        "avg_size": avg_size,
+        "total_thumbs": total_thumbs,
         "creator_count": len(creators),
         "top_creators": top_creators,
         "categories": cat_breakdown,
@@ -2336,6 +2340,7 @@ async function openStats() {
       <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">수동 카테고리</div><div style="font-size:20px;font-weight:600;">${s.overrides_count}</div></div>
       <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">휴지통</div><div style="font-size:14px;">${s.trash_count}개 · ${human(s.trash_size)}</div></div>
       <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">최신 / 최고령</div><div style="font-size:12px;">${fmtDate(s.newest_mtime)}<br>${fmtDate(s.oldest_mtime)}</div></div>
+      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">평균 크기 / 썸네일</div><div style="font-size:12px;">${human(s.avg_size||0)}<br>${(s.total_thumbs||0).toLocaleString()}개</div></div>
     </div>
     <h3 style="margin:8px 0;font-size:14px;">🏆 창작자 Top 10 (용량 기준)</h3>
     <div style="margin-bottom:16px;">
