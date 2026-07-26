@@ -24,24 +24,32 @@ APP_STATE = Path.home() / "Library" / "Application Support" / "Sims4CCManager"
 _CONFIG_PATH = APP_STATE / "config.json"
 
 
-def find_sims_root():
-    """Sims 4 폴더 자동 감지. 캐시 → 환경변수 → 표준 경로 → 심볼릭 링크 순."""
+def find_mods_root():
+    """Mods 폴더 자동 감지. 캐시(mods_root) → 캐시(구버전 sims_root) → 환경변수 → 표준 경로 순."""
     # 캐시된 경로
     try:
         if _CONFIG_PATH.exists():
             cfg = json.loads(_CONFIG_PATH.read_text())
-            p = Path(cfg.get("sims_root", ""))
-            if p.exists() and (p / "Mods").exists():
-                return p
+            mods = cfg.get("mods_root")
+            if mods:
+                p = Path(mods)
+                if p.exists():
+                    return p
+            legacy_root = cfg.get("sims_root")  # 구버전: Sims 4 게임 폴더를 저장했었음
+            if legacy_root:
+                p = Path(legacy_root) / "Mods"
+                if p.exists():
+                    return p
     except Exception:
         pass
     candidates = []
-    env = os.environ.get("SIMS4_PATH")
+    env = os.environ.get("SIMS4_MODS_PATH") or os.environ.get("SIMS4_PATH")
     if env:
-        candidates.append(Path(env))
+        env_p = Path(env)
+        candidates.append(env_p if env_p.name == "Mods" else env_p / "Mods")
     home = Path.home()
-    candidates.append(home / "Documents" / "Electronic Arts" / "The Sims 4")
-    candidates.append(home / "Games" / "Electronic Arts" / "The Sims 4")
+    candidates.append(home / "Documents" / "Electronic Arts" / "The Sims 4" / "Mods")
+    candidates.append(home / "Games" / "Electronic Arts" / "The Sims 4" / "Mods")
     # 심볼릭 링크 따라가기
     ea = home / "Documents" / "Electronic Arts"
     if ea.exists():
@@ -49,44 +57,44 @@ def find_sims_root():
             for child in ea.iterdir():
                 if child.name == "The Sims 4" or child.name.startswith("The Sims 4"):
                     try:
-                        candidates.append(child.resolve())
+                        resolved = child.resolve()
                     except Exception:
-                        candidates.append(child)
+                        resolved = child
+                    candidates.append(resolved / "Mods")
         except Exception:
             pass
     for p in candidates:
         try:
-            if p and p.exists() and (p / "Mods").exists():
+            if p and p.exists():
                 # 캐시 저장
                 try:
                     APP_STATE.mkdir(parents=True, exist_ok=True)
-                    _CONFIG_PATH.write_text(json.dumps({"sims_root": str(p)}, indent=2))
+                    _CONFIG_PATH.write_text(json.dumps({"mods_root": str(p)}, indent=2))
                 except Exception:
                     pass
                 return p
         except Exception:
             continue
     print("\n" + "=" * 60)
-    print("  Sims 4 폴더를 찾을 수 없습니다.")
+    print("  Mods 폴더를 찾을 수 없습니다.")
     print("=" * 60)
     print("  다음 중 하나를 시도해 주세요:")
-    print("   1) 환경변수로 지정:  export SIMS4_PATH=\"/경로/The Sims 4\"")
-    print("   2) 표준 위치에 설치: ~/Documents/Electronic Arts/The Sims 4")
+    print("   1) 환경변수로 지정:  export SIMS4_MODS_PATH=\"/경로/Mods\"")
+    print("   2) 표준 위치에 설치: ~/Documents/Electronic Arts/The Sims 4/Mods")
     print("   3) 설정 파일 편집:   " + str(_CONFIG_PATH))
-    print("      예: {\"sims_root\": \"/경로/The Sims 4\"}")
+    print("      예: {\"mods_root\": \"/경로/Mods\"}")
     print("=" * 60 + "\n")
     raise SystemExit(1)
 
 
-SIMS_ROOT = find_sims_root()
-MODS = SIMS_ROOT / "Mods"
+MODS = find_mods_root()
 CC_ROOT = MODS / "CC FeaturedCreators"
 THUMBS_DIR = APP_STATE / "thumbs"
 MANIFEST_PATH = APP_STATE / "manifest.json"
 TRASH_DIR = APP_STATE / "trash"
 
-# 옛 위치들 → 새 위치 마이그레이션
-_OLD_STATE = SIMS_ROOT / ".cc_manager"
+# 옛 위치들 → 새 위치 마이그레이션 (Sims 4 게임 폴더 바로 아래 있던 구버전 상태 파일)
+_OLD_STATE = MODS.parent / ".cc_manager"
 if _OLD_STATE.exists() and not APP_STATE.exists():
     APP_STATE.parent.mkdir(parents=True, exist_ok=True)
     import shutil as _shutil
@@ -854,6 +862,8 @@ HTML_PAGE = """<!DOCTYPE html>
   }
   .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 5px 0; border-top: 1px solid var(--c-border); }
   .row:first-of-type { border-top: none; padding-top: 3px; }
+  /* 필터 팝오버 행: 배경이 채워지는 카드라서 자체 여백을 따로 줘야 내용이 테두리에 안 붙음 */
+  #filterPanel { border-radius: var(--radius-md); padding: 10px 14px; margin: 4px 0; border-top: none; }
   .group { display: inline-flex; align-items: center; gap: 6px; background: var(--c-bg); padding: 4px 10px; border-radius: var(--radius-sm); height: var(--h-input); }
   .group .label { color: var(--c-text-muted); font-size: 11px; margin: 0; }
   .divider { width: 1px; height: 20px; background: var(--c-border); margin: 0 4px; }
@@ -1167,7 +1177,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <button class="chip-toggle" data-filter="tglCollapsed" onclick="toggleChipFilter('tglCollapsed')">모두 접기</button>
     <div class="divider"></div>
     <button onclick="selectAllFiltered()" title="지금 화면에 보이는 아이템 모두를 다중선택에 추가" class="pill-btn">전체 선택</button>
-    <button onclick="clearBulkSel()" title="다중선택 전체 해제" class="pill-btn">선택 해제</button>
+    <button onclick="clearBulkSel()" title="다중선택 전체 해제" class="pill-btn">전체 선택 해제</button>
     <button onclick="clearMarks()" title="삭제 표시 전체 해제" class="pill-btn danger">삭제표시 전체 해제</button>
   </div>
 
@@ -1186,7 +1196,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <div class="footer-sel-count"><b id="bulkCount">0</b>개 선택됨</div>
     <div class="footer-sub">삭제 표시 <b id="marked-count">0</b>개 · 절약 <b id="marked-size" class="red">0 B</b></div>
   </div>
-  <button class="pill-btn" onclick="clearBulkSel()" title="다중선택 전체 해제">선택 해제</button>
+  <button class="pill-btn" onclick="clearBulkSel()" title="다중선택 전체 해제">전체 선택 해제</button>
   <div style="flex:1;"></div>
   <div class="footer-group">
     <span class="label">선택 항목을</span>
@@ -1211,13 +1221,13 @@ HTML_PAGE = """<!DOCTYPE html>
       </div>
     </div>
     <div>
-      <label style="font-weight: 600; font-size: 13px;">📂 Sims 4 경로</label>
+      <label style="font-weight: 600; font-size: 13px;">📂 Mods 폴더 경로</label>
       <div style="font-size: 12px; color: var(--c-text-muted); margin-top: 4px;" id="currentPath"></div>
       <div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
-        <input type="text" id="pathInput" placeholder="예: ~/Documents/Electronic Arts/The Sims 4" style="flex:1; padding: 5px 8px; font-size: 12px;">
+        <input type="text" id="pathInput" placeholder="예: ~/Documents/Electronic Arts/The Sims 4/Mods" style="flex:1; padding: 5px 8px; font-size: 12px;">
         <button onclick="savePath()" class="blue">저장</button>
       </div>
-      <div style="font-size: 11px; color: #888; margin-top: 4px;">경로 변경 후 재스캔 필요</div>
+      <div style="font-size: 11px; color: #888; margin-top: 4px;">Sims 4 게임 폴더를 넣어도 안의 Mods를 자동으로 찾아요 · 경로 변경 후 재스캔 필요</div>
     </div>
     <div>
       <label style="font-weight: 600; font-size: 13px;">🏷️ 카테고리 지정 백업</label>
@@ -1913,8 +1923,8 @@ function toggleHeaderCollapse() {
 function openSettings() {
   // 현재 경로 표시
   fetch('/api/config').then(r => r.json()).then(cfg => {
-    document.getElementById('currentPath').textContent = '현재: ' + (cfg.sims_root || '(미지정)');
-    document.getElementById('pathInput').value = cfg.sims_root || '';
+    document.getElementById('currentPath').textContent = '현재: ' + (cfg.mods_root || '(미지정)');
+    document.getElementById('pathInput').value = cfg.mods_root || '';
   }).catch(() => {
     document.getElementById('currentPath').textContent = '(설정 조회 실패)';
   });
@@ -1932,7 +1942,7 @@ async function savePath() {
   const res = await fetch('/api/config', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({sims_root: path}),
+    body: JSON.stringify({mods_root: path}),
   });
   const data = await res.json();
   if (data.ok) {
@@ -2874,7 +2884,7 @@ class Handler(BaseHTTPRequestHandler):
             self._json(dict(SCAN_PROGRESS))
             return
         if path == "/api/config":
-            self._json({"sims_root": str(SIMS_ROOT)})
+            self._json({"mods_root": str(MODS)})
             return
         if path == "/api/overrides/export":
             from datetime import datetime
@@ -2917,7 +2927,7 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/api/restore":
             self._json(restore_from_trash(data.get("paths", [])))
         elif path == "/api/config":
-            new_path = data.get("sims_root", "").strip()
+            new_path = data.get("mods_root", "").strip()
             if not new_path:
                 self._json({"ok": False, "error": "경로가 비어있음"})
                 return
@@ -2925,16 +2935,18 @@ class Handler(BaseHTTPRequestHandler):
             if not expanded.exists():
                 self._json({"ok": False, "error": f"경로가 존재하지 않음: {expanded}"})
                 return
-            if not (expanded / "Mods").exists():
-                self._json({"ok": False, "error": f"Mods 폴더 없음: {expanded}/Mods"})
+            # Sims 4 게임 폴더를 줬으면 그 안의 Mods를 자동으로 찾아 사용
+            if expanded.name != "Mods" and (expanded / "Mods").exists():
+                expanded = expanded / "Mods"
+            if expanded.name != "Mods":
+                self._json({"ok": False, "error": f"Mods 폴더가 아님: {expanded}"})
                 return
-            _CONFIG_PATH.write_text(json.dumps({"sims_root": str(expanded)}, indent=2))
+            _CONFIG_PATH.write_text(json.dumps({"mods_root": str(expanded)}, indent=2))
             # 전역 경로 업데이트
-            global SIMS_ROOT, MODS, CC_ROOT, TRASH_DIR
-            SIMS_ROOT = expanded
-            MODS = SIMS_ROOT / "Mods"
+            global MODS, CC_ROOT
+            MODS = expanded
             CC_ROOT = MODS / "CC FeaturedCreators"
-            self._json({"ok": True, "sims_root": str(expanded)})
+            self._json({"ok": True, "mods_root": str(expanded)})
         elif path == "/api/scan":
             # 백그라운드 스레드에서 스캔, 프론트는 /api/scan-progress로 폴링
             if not SCAN_PROGRESS["active"]:
