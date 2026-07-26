@@ -794,11 +794,34 @@ HTML_PAGE = """<!DOCTYPE html>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/static/woff2/SUITE.css">
 <style>
   * { box-sizing: border-box; }
-  /* SUITE 폰트를 모든 요소에 적용 (button/input/select 포함) */
+  /* ─── 디자인 토큰 ─── */
+  :root {
+    --c-blue: #3b82f6;
+    --c-blue-hover: #2563eb;
+    --c-red: #ef4444;
+    --c-red-hover: #dc2626;
+    --c-red-bg: #fef2f2;
+    --c-blue-bg: #eff6ff;
+    --c-bg: #f9fafb;
+    --c-surface: #ffffff;
+    --c-border: #e5e7eb;
+    --c-border-strong: #d1d5db;
+    --c-text: #111827;
+    --c-text-muted: #6b7280;
+    --c-text-subtle: #9ca3af;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
+    --h-input: 32px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,.12);
+  }
+  /* SUITE 폰트 모든 요소 */
   body, button, input, select, textarea, optgroup, option, kbd { font-family: 'SUITE Variable', 'SUITE', -apple-system, BlinkMacSystemFont, sans-serif; }
-  input::placeholder { font-family: inherit; }
-  body { margin: 0; background: #f5f5f5; color: #222; }
-  header { position: sticky; top: 0; background: white; border-bottom: 1px solid #ddd; padding: 8px 16px; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,.05); }
+  input::placeholder { font-family: inherit; color: var(--c-text-subtle); }
+  body { margin: 0; background: var(--c-bg); color: var(--c-text); font-size: 13px; }
+  header { position: sticky; top: 0; background: var(--c-surface); border-bottom: 1px solid var(--c-border); padding: 10px 16px; z-index: 100; box-shadow: var(--shadow-sm); }
   .title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .title-row h1 { margin: 0; font-size: 16px; flex-shrink: 0; white-space: nowrap; }
   .stats { color: #666; font-size: 12px; flex: 1 1 200px; min-width: 0; word-break: keep-all; }
@@ -816,33 +839,63 @@ HTML_PAGE = """<!DOCTYPE html>
     #footer { flex-wrap: wrap; height: auto; padding: 6px 10px; }
     #bulkBar { flex-wrap: wrap; padding: 6px 10px; }
   }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 6px 0; border-top: 1px solid #f0f0f0; }
-  .row:first-of-type { border-top: none; padding-top: 0; }
-  .group { display: inline-flex; align-items: center; gap: 4px; background: #f7f7f7; padding: 3px 8px; border-radius: 6px; }
-  .group .label { color: #666; font-size: 11px; margin: 0; }
-  .divider { width: 1px; height: 20px; background: #ddd; margin: 0 4px; }
-  .toggle-group { display: inline-flex; align-items: center; gap: 10px; }
-  input[type=search] { padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; min-width: 220px; }
-  select { padding: 5px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 12px; background: white; }
-  button { padding: 5px 10px; font-size: 12px; background: white; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; }
-  button:hover { background: #f4f4f4; }
-  button.primary { background: #d9534f; color: white; border-color: #d43f3a; }
-  button.primary:hover { background: #c9302c; }
-  button.blue { background: #4a90e2; color: white; border-color: #357ab8; }
-  button.blue:hover { background: #357ab8; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 8px 0; border-top: 1px solid var(--c-border); }
+  .row:first-of-type { border-top: none; padding-top: 4px; }
+  .group { display: inline-flex; align-items: center; gap: 6px; background: var(--c-bg); padding: 4px 10px; border-radius: var(--radius-sm); height: var(--h-input); }
+  .group .label { color: var(--c-text-muted); font-size: 11px; margin: 0; }
+  .divider { width: 1px; height: 20px; background: var(--c-border); margin: 0 4px; }
+  .toggle-group { display: inline-flex; align-items: center; gap: 12px; }
+
+  /* ─── 통일된 폼 컨트롤 (모두 32px 높이) ─── */
+  input[type=text], input[type=search] {
+    height: var(--h-input); padding: 0 12px; border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-sm); font-size: 13px; background: var(--c-surface);
+    color: var(--c-text); transition: border-color .12s, box-shadow .12s;
+  }
+  input[type=text]:focus, input[type=search]:focus {
+    outline: none; border-color: var(--c-blue); box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+  }
+  select {
+    height: var(--h-input); padding: 0 28px 0 10px; border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-sm); font-size: 12px; background: var(--c-surface);
+    color: var(--c-text); cursor: pointer;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M2 4 L5 7 L8 4' stroke='%236b7280' stroke-width='1.4' fill='none'/></svg>");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+  select:focus { outline: none; border-color: var(--c-blue); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+
+  /* ─── 통일된 버튼 (모두 32px 높이) ─── */
+  button {
+    height: var(--h-input); padding: 0 14px; font-size: 12px; font-weight: 500;
+    background: var(--c-surface); border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-sm); cursor: pointer; color: var(--c-text);
+    transition: background-color .12s, border-color .12s, transform .06s;
+    display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+  }
+  button:hover { background: var(--c-bg); border-color: var(--c-text-muted); }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.primary { background: var(--c-red); color: white; border-color: var(--c-red-hover); }
+  button.primary:hover { background: var(--c-red-hover); border-color: var(--c-red-hover); }
+  button.blue { background: var(--c-blue); color: white; border-color: var(--c-blue-hover); }
+  button.blue:hover { background: var(--c-blue-hover); border-color: var(--c-blue-hover); }
+  button.icon-only { width: var(--h-input); padding: 0; justify-content: center; font-size: 15px; border-radius: 50%; }
+
   /* Segmented toggle */
-  .seg { display: inline-flex; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
-  .seg button { border: none; border-radius: 0; padding: 5px 12px; background: white; font-size: 12px; }
-  .seg button + button { border-left: 1px solid #ccc; }
-  .seg button.on { background: #333; color: white; }
-  /* 모드 토글: 삭제 = 빨강 (위험), 카테고리 편집 = 파랑 (안전) */
-  #modeSeg { border: 2px solid #d9534f !important; border-radius: 8px; padding: 2px; background: #fbecec !important; box-shadow: 0 0 0 2px rgba(217,83,79,.15); }
-  #modeSeg button { padding: 6px 14px !important; font-size: 13px !important; font-weight: 700 !important; border-radius: 5px !important; border-left: none !important; }
-  #modeSeg button.on { background: #d9534f !important; color: white !important; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
-  #modeSeg button:not(.on) { background: transparent !important; color: #d9534f !important; }
-  body.mode-category #modeSeg { border-color: #4a90e2 !important; background: #eaf3fc !important; box-shadow: 0 0 0 2px rgba(74,144,226,.15); }
-  body.mode-category #modeSeg button:not(.on) { color: #4a90e2 !important; background: transparent !important; }
-  body.mode-category #modeSeg button.on { background: #4a90e2 !important; color: white !important; }
+  .seg { display: inline-flex; height: var(--h-input); border: 1px solid var(--c-border-strong); border-radius: var(--radius-sm); overflow: hidden; background: var(--c-surface); }
+  .seg button { border: none; border-radius: 0; padding: 0 14px; background: transparent; font-size: 12px; height: 100%; color: var(--c-text-muted); }
+  .seg button + button { border-left: 1px solid var(--c-border); }
+  .seg button:hover { background: var(--c-bg); }
+  .seg button.on { background: var(--c-text); color: white; }
+  /* 모드 토글: 삭제 = 빨강, 카테고리 편집 = 파랑 */
+  #modeSeg { border: 1.5px solid var(--c-red) !important; background: var(--c-red-bg) !important; box-shadow: 0 0 0 2px rgba(239,68,68,.1); }
+  #modeSeg button { padding: 0 14px !important; font-size: 12px !important; font-weight: 600 !important; border-left: none !important; }
+  #modeSeg button.on { background: var(--c-red) !important; color: white !important; }
+  #modeSeg button:not(.on) { background: transparent !important; color: var(--c-red) !important; }
+  body.mode-category #modeSeg { border-color: var(--c-blue) !important; background: var(--c-blue-bg) !important; box-shadow: 0 0 0 2px rgba(59,130,246,.1); }
+  body.mode-category #modeSeg button:not(.on) { color: var(--c-blue) !important; }
+  body.mode-category #modeSeg button.on { background: var(--c-blue) !important; color: white !important; }
   /* Switch toggle */
   .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #444; cursor: pointer; user-select: none; }
   .switch input { appearance: none; -webkit-appearance: none; width: 32px; height: 18px; background: #ccc; border-radius: 10px; position: relative; cursor: pointer; transition: background .2s; margin: 0; }
@@ -851,22 +904,22 @@ HTML_PAGE = """<!DOCTYPE html>
   .switch input:checked::before { transform: translateX(14px); }
   /* Chip filter */
   .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .chip { padding: 4px 10px; border-radius: 14px; background: white; border: 1px solid #ddd; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
-  .chip:hover { background: #f4f4f4; }
-  .chip.on { background: #4a90e2; color: white; border-color: #357ab8; }
+  .chip { padding: 5px 12px; border-radius: 16px; background: var(--c-surface); border: 1px solid var(--c-border-strong); cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; transition: all .12s; color: var(--c-text); }
+  .chip:hover { background: var(--c-bg); border-color: var(--c-text-muted); }
+  .chip.on { background: var(--c-blue); color: white; border-color: var(--c-blue-hover); }
   .chip .count { opacity: .7; font-size: 11px; }
   .subchips { padding-left: 16px; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #e0e0e0; }
   .subchip { padding: 3px 8px; border-radius: 12px; background: #f4f4f4; border: 1px solid #e0e0e0; cursor: pointer; font-size: 11px; }
   .subchip:hover { background: #e8e8e8; }
   .subchip.on { background: #333; color: white; border-color: #333; }
-  .label { font-size: 11px; color: #888; margin-right: 4px; }
+  .label { font-size: 11px; color: var(--c-text-muted); margin-right: 4px; }
   main { padding: 16px; }
-  .creator { background: white; margin-bottom: 12px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  .creator-header { padding: 10px 16px; background: #fafafa; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
-  .creator-header h2 { margin: 0; font-size: 15px; flex: 1; }
-  .creator-count { color: #666; font-size: 12px; }
+  .creator { background: var(--c-surface); margin-bottom: 12px; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--c-border); }
+  .creator-header { padding: 12px 16px; background: var(--c-bg); border-bottom: 1px solid var(--c-border); display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
+  .creator-header h2 { margin: 0; font-size: 14px; font-weight: 600; flex: 1; }
+  .creator-count { color: var(--c-text-muted); font-size: 12px; }
   .creator-actions { display: flex; gap: 6px; }
-  .creator-actions button { padding: 3px 8px; font-size: 11px; }
+  .creator-actions button { height: 26px !important; padding: 0 10px !important; font-size: 11px !important; }
   .grid { padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; align-items: start; }
   .item { position: relative; border: 2px solid transparent; border-radius: 4px; cursor: pointer; background: #f9f9f9; overflow: visible; content-visibility: auto; contain-intrinsic-size: 200px 180px; }
   .item .thumb-img, .item .no-thumb { border-radius: 2px 2px 0 0; overflow: hidden; }
@@ -1063,20 +1116,20 @@ HTML_PAGE = """<!DOCTYPE html>
       <button data-v="delete" class="on">🗑️ 삭제 선택</button>
       <button data-v="category">🏷️ 카테고리 편집</button>
     </div>
-    <button onclick="undo()" id="undoBtn" title="되돌리기 (Cmd+Z)" disabled>↶</button>
+    <button onclick="undo()" id="undoBtn" title="되돌리기 (Cmd+Z)" class="icon-only" disabled>↶</button>
     <button onclick="rescan()" class="blue" title="Mods 폴더 다시 스캔">🔄 재스캔</button>
     <button onclick="openTrash()" title="삭제된 파일 관리">🗑️ 휴지통</button>
     <button onclick="openStats()" title="사용량 통계">📊 통계</button>
-    <button onclick="openSettings()" title="설정 (경로·다크모드 등)" style="border-radius:50%; width:32px; padding:0; font-size:15px;">⚙️</button>
+    <button onclick="openSettings()" title="설정 (경로·다크모드 등)" class="icon-only">⚙️</button>
     <input type="file" id="importOvFile" accept=".json,application/json" style="display:none;">
-    <button onclick="openHelp()" title="사용법 & 단축키" style="border-radius:50%; width:32px; padding:0; font-size:16px;">❓</button>
+    <button onclick="openHelp()" title="사용법 & 단축키" class="icon-only">❓</button>
   </div>
 
   <div class="row">
     <div style="position:relative; display:inline-block;">
-      <input type="text" id="search" placeholder="🔍 검색... (여러 단어 가능)" style="width: 260px; padding-right: 26px;" autocomplete="off">
-      <button id="searchClear" type="button" title="지우기" style="position:absolute; right:4px; top:50%; transform:translateY(-50%); width:20px; height:20px; padding:0; border-radius:50%; border:none; background:#ddd; color:#333; cursor:pointer; font-size:11px; display:none; line-height:1;">✕</button>
-      <div id="searchHistory" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #ccc; border-radius:6px; margin-top:2px; z-index:200; box-shadow:0 4px 10px rgba(0,0,0,.15);"></div>
+      <input type="text" id="search" placeholder="🔍 검색... (여러 단어 가능)" style="width: 260px; padding-right: 32px;" autocomplete="off">
+      <button id="searchClear" type="button" title="지우기" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:20px; height:20px; padding:0; min-width:0; border-radius:50%; border:none; background:var(--c-border); color:var(--c-text-muted); cursor:pointer; font-size:10px; display:none; line-height:1; align-items:center; justify-content:center;">✕</button>
+      <div id="searchHistory" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--radius-md); z-index:200; box-shadow:var(--shadow-md); overflow:hidden;"></div>
     </div>
     <div class="group">
       <span class="label">그룹</span>
