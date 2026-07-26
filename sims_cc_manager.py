@@ -1444,13 +1444,19 @@ function render() {
         } catch { toast('복사 실패'); }
       };
       nameEl.style.cursor = 'copy';
-      nameEl.title = '클릭하면 파일명 복사 (확장자 제외)';
+      nameEl.title = '클릭=파일명 복사 · 우클릭=다른 복사 옵션';
       nameEl.addEventListener('click', copyName);
+      const nameRightClick = (e) => {
+        e.preventDefault(); e.stopPropagation();
+        showNameCopyMenu(e, it, c.name);
+      };
+      nameEl.addEventListener('contextmenu', nameRightClick);
       if (nameFullEl) {
         nameFullEl.style.cursor = 'copy';
-        nameFullEl.title = '클릭하면 파일명 복사 (확장자 제외)';
+        nameFullEl.title = '클릭=파일명 복사 · 우클릭=다른 복사 옵션';
         nameFullEl.style.pointerEvents = 'auto';
         nameFullEl.addEventListener('click', copyName);
+        nameFullEl.addEventListener('contextmenu', nameRightClick);
       }
       // 우클릭 or cat-icon 클릭 → 카테고리 변경 메뉴
       const catEl = div.querySelector('.cat-icon');
@@ -1585,6 +1591,37 @@ async function applyToPaths(paths, category) {
 
 function openHelp() {
   document.getElementById('help-dialog').showModal();
+}
+
+async function _copyText(text, label) {
+  try { await navigator.clipboard.writeText(text); toast(`📋 복사: ${label}`); }
+  catch { toast('복사 실패'); }
+}
+
+function showNameCopyMenu(event, item, creatorName) {
+  const menu = document.getElementById('ctxMenu');
+  const clean = item.file.replace(/\\.package$/i, '');
+  const opts = [
+    {label: '파일명 복사 (확장자 제외)', val: clean, hint: '기본'},
+    {label: '전체 파일명 복사 (.package 포함)', val: item.file},
+    {label: '창작자 복사', val: creatorName || '(폴더 없음)'},
+    {label: '카테고리 복사', val: (item.cats || [item.primary_cat || '기타']).join(', ')},
+    {label: '경로 복사', val: item.path},
+  ];
+  let html = `<div class="ctx-header">📋 복사 옵션</div>`;
+  html += opts.map((o, i) => `<div class="ctx-item" data-idx="${i}">${escapeHtml(o.label)}${o.hint?` <span style="color:#999;font-size:10px;margin-left:auto;">${o.hint}</span>`:''}</div>`).join('');
+  menu.innerHTML = html;
+  const x = Math.min(event.clientX, window.innerWidth - 250);
+  const y = Math.min(event.clientY, window.innerHeight - 250);
+  menu.style.left = x + 'px'; menu.style.top = y + 'px'; menu.style.display = 'block';
+  menu.querySelectorAll('.ctx-item').forEach(el => {
+    el.onclick = () => {
+      menu.style.display = 'none';
+      const o = opts[+el.dataset.idx];
+      const preview = String(o.val).slice(0, 40) + (String(o.val).length > 40 ? '…' : '');
+      _copyText(o.val, preview);
+    };
+  });
 }
 
 function showCategoryMenu(event, pathOrPaths, currentCat) {
