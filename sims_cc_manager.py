@@ -1002,7 +1002,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
   <div class="row">
     <div style="position:relative; display:inline-block;">
-      <input type="search" id="search" placeholder="🔍 파일명·창작자 검색 (공백=AND)" style="width: 260px; padding-right: 26px;" autocomplete="off">
+      <input type="text" id="search" placeholder="🔍 파일명·창작자 검색 (공백=AND)" style="width: 260px; padding-right: 26px;" autocomplete="off">
       <button id="searchClear" type="button" title="지우기" style="position:absolute; right:4px; top:50%; transform:translateY(-50%); width:20px; height:20px; padding:0; border-radius:50%; border:none; background:#ddd; color:#333; cursor:pointer; font-size:11px; display:none; line-height:1;">✕</button>
       <div id="searchHistory" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #ccc; border-radius:6px; margin-top:2px; z-index:200; box-shadow:0 4px 10px rgba(0,0,0,.15);"></div>
     </div>
