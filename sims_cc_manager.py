@@ -875,6 +875,52 @@ HTML_PAGE = """<!DOCTYPE html>
   dialog { position: relative; }
   .trash-item { padding: 6px 8px; border-bottom: 1px solid #eee; display: flex; gap: 8px; font-size: 12px; align-items: center; }
   .trash-item input { margin: 0; }
+  /* Dark mode */
+  @media (prefers-color-scheme: dark) {
+    body { background: #1a1a1a; color: #e0e0e0; }
+    header { background: #242424; border-bottom-color: #333; box-shadow: 0 2px 4px rgba(0,0,0,.3); }
+    .row { border-top-color: #2a2a2a; }
+    .stats { color: #999; }
+    .group { background: #2a2a2a; }
+    .group .label, .label { color: #888; }
+    .divider { background: #333; }
+    input[type=search], select, button { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
+    button:hover { background: #333; }
+    .seg { border-color: #444; }
+    .seg button { background: #2a2a2a; color: #e0e0e0; }
+    .seg button + button { border-left-color: #444; }
+    .seg button.on { background: #555; }
+    .chip { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
+    .chip:hover { background: #333; }
+    .subchip { background: #333; color: #e0e0e0; border-color: #444; }
+    .subchip:hover { background: #3a3a3a; }
+    .creator { background: #242424; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+    .creator-header { background: #2a2a2a; border-bottom-color: #333; }
+    .creator-count { color: #999; }
+    .item { background: #2a2a2a; }
+    .item .name { color: #bbb; }
+    .item .name-full { background: #333; color: #e0e0e0; box-shadow: 0 -2px 6px rgba(0,0,0,.4); }
+    .item .no-thumb { background: #333; color: #888; }
+    .cat-icon { background: rgba(50,50,50,.92); color: #e0e0e0; }
+    .item.trashed { background: #2a2a2a; border-color: #666; }
+    .item.perma-deleted { background: #3a2a2a; }
+    dialog { background: #242424; color: #e0e0e0; }
+    .dlg-close { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+    .dlg-close:hover { background: #333; }
+    .progress { background: #2a2a2a; color: #e0e0e0; }
+    .progress-bar { background: #333; }
+    #ctxMenu { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+    #ctxMenu .ctx-header { color: #888; border-bottom-color: #333; }
+    #ctxMenu .ctx-item:hover { background: #333; }
+    #ctxMenu .ctx-item.current { background: #1e3a5f; }
+    #ctxMenu .ctx-item.reset { border-top-color: #333; }
+    .creator-sub { color: #777; }
+    kbd { background: #333; border-color: #555; color: #e0e0e0; }
+    .trash-item { border-bottom-color: #333; }
+    /* 유지: 표시된 아이템 색상 유지 */
+    .item.marked { border-color: #d9534f; background: #3a1e1e; }
+    .item.marked.selected { background: #3a1e1e !important; }
+  }
 </style>
 </head><body>
 <header>
