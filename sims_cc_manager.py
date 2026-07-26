@@ -791,44 +791,45 @@ def empty_trash():
 HTML_PAGE = """<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <title>Sims 4 CC Manager</title>
-<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/static/woff2/SUITE.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
-  /* ─── 디자인 토큰 ─── */
+  /* ─── 디자인 토큰 (CC Manager 정리안 기준) ─── */
   :root {
-    --c-blue: #3b82f6;
-    --c-blue-hover: #2563eb;
-    --c-red: #ef4444;
-    --c-red-hover: #dc2626;
-    --c-red-bg: #fef2f2;
-    --c-blue-bg: #eff6ff;
-    --c-bg: #f9fafb;
+    --c-blue: #2f6fd0;
+    --c-blue-hover: #2560bb;
+    --c-blue-bg: #eaf1fc;
+    --c-red: #b23c2b;
+    --c-red-hover: #9c3324;
+    --c-red-bg: #fdeeeb;
+    --c-bg: #f4f2ee;
     --c-surface: #ffffff;
-    --c-border: #e5e7eb;
-    --c-border-strong: #d1d5db;
-    --c-text: #111827;
-    --c-text-muted: #6b7280;
-    --c-text-subtle: #9ca3af;
-    --radius-sm: 6px;
-    --radius-md: 8px;
-    --radius-lg: 10px;
-    --h-input: 30px;
+    --c-surface-2: #f7f5f1;
+    --c-seg-bg: #f1efeb;
+    --c-border: rgba(0,0,0,.08);
+    --c-border-strong: rgba(0,0,0,.13);
+    --c-text: #1c1b19;
+    --c-text-muted: #6f6d68;
+    --c-text-subtle: #a8a6a0;
+    --c-text-label: #8b8983;
+    --radius-sm: 7px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+    --h-input: 32px;
     --h-thumb: 130px;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
-    --shadow-md: 0 4px 12px rgba(0,0,0,.08);
-    --shadow-lg: 0 8px 24px rgba(0,0,0,.12);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+    --shadow-md: 0 6px 20px rgba(0,0,0,.1);
+    --shadow-lg: 0 12px 32px rgba(0,0,0,.18);
   }
-  /* SUITE 폰트 모든 요소 */
-  body, button, input, select, textarea, optgroup, option, kbd { font-family: 'SUITE Variable', 'SUITE', -apple-system, BlinkMacSystemFont, sans-serif; }
+  /* Noto Sans KR 모든 요소 */
+  body, button, input, select, textarea, optgroup, option, kbd { font-family: 'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
   input::placeholder { font-family: inherit; color: var(--c-text-subtle); }
-  body { margin: 0; background: var(--c-bg); color: var(--c-text); font-size: 13px; }
-  header { position: sticky; top: 0; background: var(--c-surface); border-bottom: 1px solid var(--c-border); padding: 6px 16px; z-index: 100; box-shadow: var(--shadow-sm); }
-  .title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 2px 0; }
-  .title-row h1 { margin: 0; font-size: 15px; flex-shrink: 0; white-space: nowrap; }
-  .stats { color: var(--c-text-muted); font-size: 11px; flex: 1 1 auto; min-width: 0; word-break: keep-all; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  /* 모드 선택 줄: 살짝 강조해서 독립된 섹션임을 표시 */
-  .mode-row { align-items: center; }
-  .mode-row .label { font-weight: 600; }
+  body { margin: 0; background: var(--c-bg); color: var(--c-text); font-size: 13px; -webkit-font-smoothing: antialiased; }
+  header { position: sticky; top: 0; background: var(--c-surface); border-bottom: 1px solid var(--c-border); padding: 0; z-index: 100; }
+  .title-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 11px 16px; border-bottom: 1px solid var(--c-border); }
+  .title-row h1 { margin: 0; font-size: 15px; font-weight: 700; flex-shrink: 0; white-space: nowrap; letter-spacing: -.2px; }
+  .stats { color: var(--c-text-label); font-size: 11.5px; display: flex; gap: 12px; flex-shrink: 0; white-space: nowrap; }
+  .stats b { color: var(--c-text-muted); font-weight: 600; }
   /* 접기 대상 영역 */
   .collapsible-body { }
   body.header-collapsed .collapsible-body { display: none; }
@@ -848,7 +849,6 @@ HTML_PAGE = """<!DOCTYPE html>
     .row { padding: 4px 0; }
     #search { width: 100% !important; }
     #footer { flex-wrap: wrap; height: auto; padding: 6px 10px; }
-    #bulkBar { flex-wrap: wrap; padding: 6px 10px; }
   }
   .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 5px 0; border-top: 1px solid var(--c-border); }
   .row:first-of-type { border-top: none; padding-top: 3px; }
@@ -903,113 +903,124 @@ HTML_PAGE = """<!DOCTYPE html>
   /* 헤더 접기 상태: 첫 title-row + stats 만 보임 */
   body.header-collapsed header > .row { display: none; }
 
-  /* Segmented toggle */
-  .seg { display: inline-flex; height: var(--h-input); border: 1px solid var(--c-border-strong); border-radius: var(--radius-sm); overflow: hidden; background: var(--c-surface); }
-  .seg button { border: none; border-radius: 0; padding: 0 14px; background: transparent; font-size: 12px; height: 100%; color: var(--c-text-muted); }
-  .seg button + button { border-left: 1px solid var(--c-border); }
-  .seg button:hover { background: var(--c-bg); }
-  .seg button.on { background: var(--c-text); color: white; }
-  /* 모드 토글: 삭제 = 빨강, 카테고리 편집 = 파랑 */
-  #modeSeg { border: 1.5px solid var(--c-red) !important; background: var(--c-red-bg) !important; box-shadow: 0 0 0 2px rgba(239,68,68,.1); }
-  #modeSeg button { padding: 0 14px !important; font-size: 12px !important; font-weight: 600 !important; border-left: none !important; }
-  #modeSeg button.on { background: var(--c-red) !important; color: white !important; }
-  #modeSeg button:not(.on) { background: transparent !important; color: var(--c-red) !important; }
-  body.mode-category #modeSeg { border-color: var(--c-blue) !important; background: var(--c-blue-bg) !important; box-shadow: 0 0 0 2px rgba(59,130,246,.1); }
-  body.mode-category #modeSeg button:not(.on) { color: var(--c-blue) !important; }
-  body.mode-category #modeSeg button.on { background: var(--c-blue) !important; color: white !important; }
+  /* Segmented toggle (묶음/모드 공용 — 색코딩 없음, 흰 알약이 선택 표시) */
+  .seg { display: inline-flex; align-items: center; height: var(--h-input); border: none; border-radius: 9px; overflow: hidden; background: var(--c-seg-bg); padding: 3px; gap: 2px; box-sizing: border-box; }
+  .seg button { border: none !important; border-radius: 6px !important; padding: 0 12px !important; background: transparent; font-size: 12px; font-weight: 500; height: 26px !important; color: #7d7b76; box-shadow: none; }
+  .seg button.on { background: #fff !important; color: var(--c-text) !important; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .seg button:not(.on):hover { color: var(--c-text-muted); }
+  #modeSeg button { padding: 0 14px !important; }
   /* Switch toggle */
   .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #444; cursor: pointer; user-select: none; }
   .switch input { appearance: none; -webkit-appearance: none; width: 32px; height: 18px; background: #ccc; border-radius: 10px; position: relative; cursor: pointer; transition: background .2s; margin: 0; }
   .switch input:checked { background: #4a90e2; }
   .switch input::before { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: white; border-radius: 50%; transition: transform .2s; }
   .switch input:checked::before { transform: translateX(14px); }
-  /* Chip filter */
+  /* 필터 팝오버 안 토글 칩 (스위치 대신 파란 알약) */
+  .chip-toggle { height: 28px; padding: 0 12px; border-radius: 14px; background: var(--c-surface); border: 1px solid var(--c-border-strong); color: #5c5a55; font-size: 11.5px; font-weight: 500; }
+  .chip-toggle:hover { background: var(--c-bg); }
+  .chip-toggle.on { background: var(--c-blue-bg); color: var(--c-blue); border-color: var(--c-blue); font-weight: 600; }
+  .pill-btn { height: 28px; padding: 0 11px; border-radius: 14px; background: var(--c-surface); border: 1px solid var(--c-border-strong); color: #3a3835; font-size: 11.5px; font-weight: 500; }
+  .pill-btn:hover { background: var(--c-bg); }
+  .pill-btn.danger { color: var(--c-red); }
+  .pill-btn.danger:hover { background: var(--c-red-bg); }
+  #filterToggleBtn.active { border-color: var(--c-blue) !important; background: var(--c-blue-bg) !important; color: var(--c-blue) !important; font-weight: 600; }
+  /* 카테고리 알약: 미선택 흰 배경, 선택 시 진한 배경(색 코딩 없이 무채색 강조) */
   .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .chip { padding: 5px 12px; border-radius: 16px; background: var(--c-surface); border: 1px solid var(--c-border-strong); cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; transition: all .12s; color: var(--c-text); }
-  .chip:hover { background: var(--c-bg); border-color: var(--c-text-muted); }
-  .chip.on { background: var(--c-blue); color: white; border-color: var(--c-blue-hover); }
-  .chip .count { opacity: .7; font-size: 11px; }
+  .chip { height: 30px; padding: 0 12px; border-radius: 15px; background: var(--c-surface); border: 1px solid var(--c-border-strong); cursor: pointer; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 7px; transition: all .12s; color: #4a4844; }
+  .chip:hover { background: var(--c-bg); }
+  .chip.on { background: var(--c-text); color: #fff; border-color: var(--c-text); font-weight: 600; }
+  .chip .count { font: 600 10.5px ui-monospace, Menlo, monospace; color: var(--c-text-subtle); }
+  .chip.on .count { color: rgba(255,255,255,.7); }
   .subchips { padding-left: 16px; }
   #subRow { padding-top: 0 !important; }
-  .subchip { padding: 3px 8px; border-radius: 12px; background: #f4f4f4; border: 1px solid #e0e0e0; cursor: pointer; font-size: 11px; }
-  .subchip:hover { background: #e8e8e8; }
-  .subchip.on { background: #333; color: white; border-color: #333; }
-  .label { font-size: 11px; color: var(--c-text-muted); margin-right: 4px; }
+  .subchip { height: 28px; padding: 0 11px; border-radius: 14px; background: var(--c-surface); border: 1px solid var(--c-border-strong); cursor: pointer; font-size: 11.5px; font-weight: 500; color: #4a4844; }
+  .subchip:hover { background: var(--c-bg); }
+  .subchip.on { background: var(--c-text); color: #fff; border-color: var(--c-text); font-weight: 600; }
+  .subchip .count { font: 600 10px ui-monospace, Menlo, monospace; color: var(--c-text-subtle); margin-left: 3px; }
+  .subchip.on .count { color: rgba(255,255,255,.7); }
+  .label { font-size: 11.5px; color: var(--c-text-label); margin-right: 4px; font-weight: 500; }
   main { padding: 16px; }
-  .creator { background: var(--c-surface); margin-bottom: 12px; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--c-border); }
-  .creator-header { padding: 12px 16px; background: var(--c-bg); border-bottom: 1px solid var(--c-border); display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
-  .creator-header h2 { margin: 0; font-size: 14px; font-weight: 600; flex: 1; }
-  .creator-count { color: var(--c-text-muted); font-size: 12px; }
-  .creator-actions { display: flex; gap: 6px; }
-  .creator-actions button { height: 26px !important; padding: 0 10px !important; font-size: 11px !important; }
-  .grid { padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--h-thumb), 1fr)); gap: 6px; align-items: start; }
-  .item { position: relative; border: 2px solid transparent; border-radius: 4px; cursor: pointer; background: #f9f9f9; overflow: visible; content-visibility: auto; contain-intrinsic-size: 200px 180px; }
-  .item .thumb-img, .item .no-thumb { border-radius: 2px 2px 0 0; overflow: hidden; }
-  .item:hover { border-color: #4a90e2; z-index: 10; }
-  .item.marked { border-color: #d9534f; background: #ffe8e8; box-shadow: 0 0 0 1px #d9534f inset; }
-  .item.marked .thumb-img, .item.marked .no-thumb { filter: brightness(0.85) saturate(0.7); }
-  .item.marked::after {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(rgba(217,83,79,.15), rgba(217,83,79,.25));
-    pointer-events: none; border-radius: 2px;
+  .creator { background: var(--c-surface); margin-bottom: 14px; border-radius: var(--radius-md); overflow: visible; box-shadow: var(--shadow-sm); border: 1px solid var(--c-border); }
+  .creator-header { padding: 12px 14px; background: var(--c-surface); border-bottom: 1px solid var(--c-border); display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+  .creator-header .crumb-parent { font-size: 11.5px; color: var(--c-text-subtle); }
+  .creator-header h2 { margin: 0; font-size: 13px; font-weight: 600; }
+  .creator-count { color: var(--c-text-label); font-size: 11.5px; }
+  .creator-marked-badge { font-size: 10.5px; font-weight: 600; color: var(--c-red); background: var(--c-red-bg); border-radius: 11px; padding: 3px 8px; }
+  .creator-actions { display: flex; gap: 6px; margin-left: auto; }
+  .creator-actions button { height: 28px !important; padding: 0 10px !important; font-size: 11.5px !important; font-weight: 500 !important; color: var(--c-text-muted); }
+  .creator-actions button.danger-hover:hover { background: var(--c-red-bg) !important; color: var(--c-red) !important; border-color: rgba(178,60,43,.3) !important; }
+  .grid { padding: 14px; display: flex; flex-wrap: wrap; gap: 12px; position: relative; }
+  .item { position: relative; width: var(--h-thumb); cursor: pointer; }
+  .item .thumb-frame { position: relative; width: var(--h-thumb); height: var(--h-thumb); border-radius: 9px; overflow: hidden; border: 2px solid var(--c-border-strong); box-sizing: border-box; background: #f9f9f9; }
+  /* 실제 CAS 썸네일은 세로가 긴 비율(104x148)이라 cover로 자르면 얼굴/발이 잘림 → contain */
+  .item .thumb-img { display: block; width: 100%; height: 100%; object-fit: contain; background: #f4f2ee; }
+  .item:hover .thumb-frame { border-color: var(--c-blue); }
+  body.mode-category .item:not(.trashed):hover { cursor: cell; }
+  body.mode-category .item:not(.trashed):hover .thumb-frame { border-color: var(--c-blue); }
+  /* 삭제 표시: 빨간 테두리 + 반투명 빨강 오버레이 (텍스트도 취소선) */
+  .item.marked .thumb-frame { border-color: #d6705f; }
+  .item.marked .thumb-frame::after {
+    content: ''; position: absolute; inset: 0; background: rgba(178,60,43,.24); pointer-events: none;
   }
-  body.mode-category .item:not(.trashed):hover { border-color: #4a90e2; cursor: cell; }
-  body.mode-category .item:not(.trashed).marked { opacity: 0.5; }
-  .item.selected { border-color: #4a90e2 !important; box-shadow: 0 0 0 2px #4a90e2, 0 0 8px rgba(74,144,226,.5); }
-  .item.selected::before { content: '✓'; position: absolute; top: 4px; left: 4px; background: #4a90e2; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; z-index: 3; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
-  /* 삭제표시 + 다중선택 둘 다: 파란 테두리 + 빨간 배경 tint 만 (별도 배지 X) */
-  .item.marked.selected { background: #ffe8e8 !important; }
-  .item.kb-focus { outline: 2px dashed #4a90e2; outline-offset: 2px; }
-  .item.marked.selected .thumb-img { filter: brightness(0.9) saturate(0.85); }
+  .item.marked .name { color: var(--c-red); text-decoration: line-through; }
+  body.mode-category .item:not(.trashed).marked .thumb-frame { opacity: 0.5; }
+  /* 다중 선택: 파란 테두리 + 좌상단 체크 뱃지 */
+  .item.selected .thumb-frame { border-color: var(--c-blue) !important; box-shadow: 0 0 0 3px rgba(47,111,208,.18); }
+  .item.selected .sel-badge { display: flex; }
+  .sel-badge { display: none; position: absolute; left: 5px; top: 5px; width: 17px; height: 17px; border-radius: 5px; background: var(--c-blue); color: #fff; font-size: 10px; font-weight: 700; align-items: center; justify-content: center; z-index: 3; }
+  .item.kb-focus .thumb-frame { outline: 2px dashed var(--c-blue); outline-offset: 2px; }
   .chip.drop-target { background: #ffe066 !important; color: #333 !important; border-color: #f0a500 !important; transform: scale(1.1); }
   .item.dragging { opacity: 0.4; }
-  #bulkBar { position: fixed; bottom: 44px; left: 0; right: 0; background: #333; color: white; padding: 8px 16px; z-index: 99; display: none; align-items: center; gap: 12px; box-shadow: 0 -2px 8px rgba(0,0,0,.2); }
-  #footer { height: 44px; padding: 0 16px; }
-  body { padding-bottom: 60px; }
-  body.has-bulk { padding-bottom: 108px; }
-  #bulkBar select { padding: 5px 8px; border-radius: 4px; }
-  #bulkBar .info { flex: 1; font-size: 14px; }
-  .item.trashed { opacity: 0.6; border-color: #999; background: #f0f0f0; }
-  .item.trashed .thumb-img { filter: grayscale(0.7); }
-  .item.perma-deleted { opacity: 0.4; border-color: #600; background: #f5eaea; }
-  .item.perma-deleted .thumb-img { filter: grayscale(1) brightness(0.6); }
-  .item.perma-deleted .name, .item.perma-deleted .name-full { text-decoration: line-through; color: #999; }
-  .trash-badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.75); color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; z-index: 3; }
-  /* 카테고리 아이콘: 썸네일 이미지 안쪽 우하단 (이름과 안 겹침) */
-  .cat-icon { position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,.92); padding: 2px 6px; border-radius: 10px; font-size: 13px; box-shadow: 0 1px 3px rgba(0,0,0,.2); cursor: context-menu; z-index: 2; transition: opacity .15s; }
-  .item:hover .cat-icon { opacity: 0.2; }  /* hover 시 흐리게 → thumb nav 안 가림 */
-  .item:hover .cat-icon:hover { opacity: 1; }  /* 아이콘 자체 hover 시 다시 진하게 */
-  .cat-icon.override { background: #ffd700; box-shadow: 0 0 0 1px #b8860b; }
-  #ctxMenu { position: fixed; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.15); padding: 4px; z-index: 1000; max-height: 400px; overflow-y: auto; min-width: 180px; display: none; }
-  #ctxMenu .ctx-header { padding: 4px 8px; font-size: 11px; color: #666; border-bottom: 1px solid #eee; margin-bottom: 4px; }
-  #ctxMenu .ctx-item { padding: 5px 10px; font-size: 13px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 6px; }
-  #ctxMenu .ctx-item:hover { background: #f4f4f4; }
-  #ctxMenu .ctx-item.current { background: #e8f4ff; font-weight: 600; }
-  #ctxMenu .ctx-item.reset { border-top: 1px solid #eee; margin-top: 4px; padding-top: 8px; color: #d9534f; }
+  body { padding-bottom: 66px; }
+  .item.trashed .thumb-frame { opacity: 0.55; border-color: var(--c-border-strong); filter: grayscale(0.6); }
+  .item.perma-deleted .thumb-frame { opacity: 0.35; filter: grayscale(1) brightness(0.7); }
+  .item.perma-deleted .name, .item.perma-deleted .name-full { text-decoration: line-through; color: var(--c-text-subtle); }
+  .trash-badge { position: absolute; top: 5px; left: 5px; background: rgba(20,19,18,.72); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; z-index: 3; }
+  /* 카테고리 텍스트 뱃지: 썸네일 우상단 흰 알약 */
+  .cat-pill { position: absolute; right: 5px; top: 5px; font-size: 9px; font-weight: 600; color: #4a4844; background: rgba(255,255,255,.92); border-radius: 9px; padding: 2px 6px; box-shadow: 0 1px 2px rgba(0,0,0,.12); z-index: 2; cursor: context-menu; max-width: 78%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cat-pill.override { background: #fff3c4; box-shadow: 0 0 0 1px #d4a017; }
+  /* 카테고리 변경 메뉴: 클릭한 아이템에 앵커되는 팝업 (전역 고정 아님) */
+  #ctxMenu { position: absolute; background: var(--c-surface); border: 1px solid rgba(0,0,0,.1); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 20; width: 300px; display: none; overflow: hidden; }
+  #ctxMenu .ctx-header { padding: 11px 13px 9px; border-bottom: 1px solid var(--c-border); }
+  #ctxMenu .ctx-title { font-size: 11.5px; font-weight: 600; color: var(--c-text); }
+  #ctxMenu .ctx-file { font: 400 10.5px ui-monospace, Menlo, monospace; color: var(--c-text-subtle); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #ctxMenu .ctx-search-wrap { padding: 9px 11px; }
+  #ctxMenu .ctx-search { width: 100%; height: 29px; padding: 0 10px; border: 1px solid var(--c-border-strong); border-radius: 6px; background: var(--c-surface-2); font-size: 11.5px; outline: none; }
+  #ctxMenu .ctx-search:focus { border-color: var(--c-blue); background: #fff; }
+  #ctxMenu .ctx-list { max-height: 250px; overflow-y: auto; padding: 0 7px 8px; }
+  #ctxMenu .ctx-section { font-size: 10px; font-weight: 600; color: var(--c-text-subtle); letter-spacing: .06em; padding: 9px 6px 5px; }
+  #ctxMenu .ctx-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 9px; border-radius: 6px; cursor: pointer; font-size: 12px; color: #3a3835; }
+  #ctxMenu .ctx-item:hover { background: var(--c-bg); }
+  #ctxMenu .ctx-item.current { color: var(--c-blue); background: var(--c-blue-bg); font-weight: 600; }
+  #ctxMenu .ctx-check { color: var(--c-blue); font-weight: 700; font-size: 11px; opacity: 0; }
+  #ctxMenu .ctx-item.current .ctx-check { opacity: 1; }
+  #ctxMenu .ctx-reset { border-top: 1px solid var(--c-border); margin: 4px 7px 8px; padding: 9px 9px 0; color: var(--c-red); cursor: pointer; font-size: 11.5px; }
   .creator-sub { padding: 0 6px 2px; font-size: 9px; color: #999; font-style: italic; }
-  .item img { display: block; width: 100%; height: auto; }
-  .item .no-thumb { padding: 40px 8px; text-align: center; color: #999; font-size: 11px; background: #eee; }
-  /* 기본: 2줄까지 잘리지 않고 항상 완전히 보임. 한 줄이면 한 줄 높이 유지 (min-height 없음). */
-  .item .name { padding: 3px 6px; font-size: 10px; color: #555; word-break: break-all; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
-  /* 3줄 이상 긴 이름만 hover 시 팝오버로 위쪽 확장 - 원본은 그대로 유지, 그 위에 덮음 */
-  .item .name-full { display: none; position: absolute; bottom: 0; left: 0; right: 0; padding: 3px 6px; font-size: 10px; color: #222; word-break: break-all; line-height: 1.35; background: white; z-index: 100; box-shadow: 0 -2px 6px rgba(0,0,0,.15); border-radius: 0 0 2px 2px; }
-  /* JS로 짧은 이름은 name-full 을 아예 안 그리게 함 */
+  .item .no-thumb { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; text-align: center; color: var(--c-text-subtle); font-size: 11px; background: repeating-linear-gradient(135deg, #efedea 0 6px, #e6e3df 6px 12px); }
+  /* 이름: 썸네일 아래 일반 흐름, 2줄까지 잘리지 않고 완전히 보임 */
+  .item .name { margin-top: 6px; padding: 0 2px; font-size: 10.5px; line-height: 1.4; color: #5c5a55; word-break: break-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+  .item .name-full { display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: -2px; padding: 4px 6px; font-size: 10.5px; color: #222; word-break: break-all; line-height: 1.4; background: white; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,.15); border-radius: 4px; }
   .item:hover .name-full { display: block; }
-  .item .sz { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.6); color: white; padding: 1px 5px; font-size: 10px; border-radius: 3px; pointer-events: none; z-index: 2; }
-  .item.selected::before { left: 4px; }
-  .item.selected .sz { display: none; }
+  .item .sz { position: absolute; left: 5px; bottom: 5px; background: rgba(20,19,18,.62); color: white; padding: 2px 5px; font-size: 9.5px; font-weight: 600; font-family: ui-monospace, Menlo, monospace; border-radius: 4px; pointer-events: none; z-index: 2; }
   .thumb-img, .no-thumb { cursor: pointer; }
-  /* Thumb nav은 썸네일 아래쪽 (이름 바로 위) */
-  .thumb-nav { position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity .15s; pointer-events: none; background: rgba(0,0,0,.65); border-radius: 14px; padding: 2px 4px; }
+  /* Thumb nav: 썸네일 하단 중앙 (사이즈뱃지·카테고리필 피해서) */
+  .thumb-nav { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity .15s; pointer-events: none; background: rgba(20,19,18,.72); border-radius: 14px; padding: 2px 4px; z-index: 3; }
   .item:hover .thumb-nav { opacity: 1; pointer-events: auto; }
-  .thumb-btn { background: rgba(0,0,0,.6); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .thumb-btn:hover { background: rgba(0,0,0,.85); }
-  .thumb-counter { background: rgba(0,0,0,.6); color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-variant-numeric: tabular-nums; }
+  .thumb-btn { background: rgba(255,255,255,.2); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 9px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .thumb-btn:hover { background: rgba(255,255,255,.4); }
+  .thumb-counter { color: white; padding: 0 4px; font-size: 9px; font-variant-numeric: tabular-nums; }
   .collapsed .grid, .collapsed .creator-actions { display: none; }
-  #footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #ddd; display: flex; align-items: center; gap: 12px; z-index: 100; box-shadow: 0 -2px 4px rgba(0,0,0,.05); }
-  #footer .count { flex: 1; font-size: 14px; }
-  #footer .count b { color: #d9534f; }
+  /* 병합된 하단 바: 선택됨 + 삭제표시 + 카테고리 지정 + 휴지통 이동 전부 한 줄 */
+  #footer { position: fixed; bottom: 0; left: 0; right: 0; height: 58px; padding: 0 16px; background: var(--c-surface); border-top: 1px solid var(--c-border-strong); box-shadow: 0 -2px 10px rgba(0,0,0,.04); z-index: 100; display: flex; align-items: center; gap: 14px; }
+  .footer-info { display: flex; flex-direction: column; gap: 2px; min-width: 190px; cursor: pointer; user-select: none; }
+  .footer-sel-count { font-size: 12.5px; font-weight: 600; color: var(--c-text); }
+  .footer-sub { font-size: 11px; color: var(--c-text-label); }
+  .footer-sub b { font-weight: 600; }
+  .footer-sub .red { color: var(--c-red); }
+  #footer select { height: 34px; }
+  #footer button.blue, #footer button.danger-outline { height: 34px; padding: 0 16px; font-weight: 600; font-size: 12.5px; }
+  .danger-outline { background: var(--c-surface); color: var(--c-red); border: 1px solid rgba(178,60,43,.35) !important; }
+  .danger-outline:hover:not(:disabled) { background: var(--c-red) !important; color: #fff !important; border-color: var(--c-red) !important; }
   .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 6px; opacity: 0; transition: opacity .3s; z-index: 200; }
   .toast.show { opacity: 1; }
   .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px; }
@@ -1136,88 +1147,72 @@ HTML_PAGE = """<!DOCTYPE html>
 </style>
 </head><body>
 <header>
-  <!-- 브랜드 바: 로고 + 상시 액션들. 모드 토글은 별도 줄로 분리 (로고 옆 붙어있으면 안 어울림) -->
+  <!-- 브랜드 바: 로고 + 통계 + 모드 + 상시 액션 (전부 한 줄, 색 코딩 없이 무채색) -->
   <div class="title-row">
-    <h1>🎮 CC Manager</h1>
+    <div style="display:flex; align-items:center; gap:9px; flex-shrink:0;">
+      <div style="width:22px; height:22px; border-radius:6px; background:var(--c-text);"></div>
+      <h1>CC Manager</h1>
+    </div>
     <div class="stats" id="stats">로딩 중...</div>
+    <div style="flex:1;"></div>
+    <div class="seg" id="modeSeg" title="선택 모드">
+      <button data-v="delete" class="on">삭제 선택</button>
+      <button data-v="category">카테고리 편집</button>
+    </div>
+    <div class="divider"></div>
     <button onclick="undo()" id="undoBtn" title="되돌리기 (Cmd+Z)" class="icon-only" disabled>↶</button>
-    <button onclick="rescan()" class="blue" title="Mods 폴더 다시 스캔">🔄 재스캔</button>
-    <button onclick="openTrash()" title="휴지통">🗑️ 휴지통</button>
-    <button onclick="openStats()" title="통계">📊 통계</button>
+    <button onclick="rescan()" title="Mods 폴더 다시 스캔">재스캔</button>
+    <button onclick="openTrash()" title="휴지통">휴지통</button>
+    <button onclick="openStats()" title="통계">통계</button>
     <div class="menu-wrap">
-      <button onclick="toggleOverflowMenu(event)" class="icon-only" title="더보기">⋯</button>
+      <button onclick="toggleOverflowMenu(event)" class="icon-only" title="더보기">···</button>
       <div id="overflowMenu" class="overflow-menu">
-        <button onclick="openSettings(); closeOverflow();">⚙️ 설정</button>
-        <button onclick="openHelp(); closeOverflow();">❓ 도움말</button>
+        <button onclick="openSettings(); closeOverflow();">설정</button>
+        <button onclick="openHelp(); closeOverflow();">도움말</button>
       </div>
     </div>
     <button onclick="toggleHeaderCollapse()" id="collapseBtn" class="icon-only" title="헤더 접기/펼치기">▲</button>
     <input type="file" id="importOvFile" accept=".json,application/json" style="display:none;">
   </div>
 
-  <!-- 모드 선택: 별도 줄로, 전체 너비 강조 -->
-  <div class="row mode-row">
-    <span class="label">모드</span>
-    <div class="seg" id="modeSeg" title="선택 모드">
-      <button data-v="delete" class="on">🗑️ 삭제 선택</button>
-      <button data-v="category">🏷️ 카테고리 편집</button>
-    </div>
-  </div>
-
   <div class="collapsible-body">
   <div class="row">
-    <div style="position:relative; display:inline-block;">
-      <input type="text" id="search" placeholder="🔍 검색... (여러 단어 가능)" style="width: 260px; padding-right: 32px;" autocomplete="off">
-      <button id="searchClear" type="button" title="지우기" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:20px; height:20px; padding:0; min-width:0; border-radius:50%; border:none; background:var(--c-border); color:var(--c-text-muted); cursor:pointer; font-size:10px; display:none; line-height:1; align-items:center; justify-content:center;">✕</button>
+    <div style="position:relative; width:280px;">
+      <div style="position:absolute; left:11px; top:0; bottom:0; display:flex; align-items:center; font-size:12px; color:var(--c-text-subtle); pointer-events:none;">⌕</div>
+      <input type="text" id="search" placeholder="파일 · 폴더 · 제작자 검색" style="width:100%; padding-left:28px; padding-right:32px;" autocomplete="off">
+      <button id="searchClear" type="button" title="지우기" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:20px; height:20px; padding:0; min-width:0; border-radius:50%; border:none; background:var(--c-border-strong); color:var(--c-text-muted); cursor:pointer; font-size:10px; display:none; line-height:1; align-items:center; justify-content:center;">✕</button>
       <div id="searchHistory" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--radius-md); z-index:200; box-shadow:var(--shadow-md); overflow:hidden;"></div>
     </div>
-    <div class="group">
-      <span class="label">그룹</span>
-      <div class="seg" id="groupSeg">
-        <button data-v="creator" class="on">폴더별</button>
-        <button data-v="category">카테고리별</button>
-        <button data-v="date">날짜별</button>
-      </div>
+    <div class="divider"></div>
+    <span class="label">묶음</span>
+    <div class="seg" id="groupSeg">
+      <button data-v="creator" class="on">폴더별</button>
+      <button data-v="category">카테고리별</button>
+      <button data-v="date">날짜별</button>
     </div>
-    <div class="group">
-      <span class="label">그룹정렬</span>
-      <select id="sortBy">
-        <option value="name">이름</option>
-        <option value="size">크기</option>
-        <option value="count">개수</option>
-        <option value="recent">최근 파일순</option>
-        <option value="oldest">오래된 파일순</option>
-      </select>
-    </div>
-    <div class="group">
-      <span class="label">아이템정렬</span>
-      <select id="itemSortBy">
-        <option value="name">이름</option>
-        <option value="size">크기</option>
-        <option value="category">카테고리</option>
-        <option value="recent">최근순</option>
-        <option value="oldest">오래된순</option>
-      </select>
-    </div>
-    <div class="group">
-      <span class="label">🖼️ 썸네일</span>
-      <input type="range" id="zoomSlider" min="80" max="240" value="130" style="width: 90px; height: 20px;" title="아이템 썸네일 크기">
-    </div>
+    <span class="label" style="margin-left:6px;">정렬</span>
+    <select id="itemSortBy">
+      <option value="name">이름순</option>
+      <option value="size">용량순</option>
+      <option value="recent">날짜순</option>
+    </select>
+    <div style="flex:1;"></div>
+    <button id="filterToggleBtn" onclick="toggleFilterPanel()" title="자주 안 쓰는 필터·선택 도구">필터</button>
+    <div class="divider"></div>
+    <span class="label">썸네일</span>
+    <input type="range" id="zoomSlider" min="80" max="240" value="130" style="width: 96px; height: 20px; accent-color: var(--c-blue);" title="아이템 썸네일 크기">
   </div>
 
-  <div class="row">
-    <div class="toggle-group">
-      <label class="switch"><input type="checkbox" id="tglMarked"> 🗑️ 지울 것만</label>
-      <label class="switch"><input type="checkbox" id="tglOverride"> 🖐️ 수동 지정만</label>
-      <label class="switch"><input type="checkbox" id="tglHideTrashed"> 휴지통 항목 숨기기</label>
-      <label class="switch"><input type="checkbox" id="tglHidePerma" checked> 완전삭제 숨기기</label>
-      <label class="switch"><input type="checkbox" id="tglCollapsed"> 모두 접기</label>
-    </div>
+  <div class="row" id="filterPanel" style="background:var(--c-surface-2); margin: 0 -16px; padding-left:16px; padding-right:16px; display:none;">
+    <button class="chip-toggle" data-filter="tglMarked" onclick="toggleChipFilter('tglMarked')">지울 것만</button>
+    <button class="chip-toggle" data-filter="tglOverride" onclick="toggleChipFilter('tglOverride')">수동 지정만</button>
+    <button class="chip-toggle" data-filter="tglHideTrashed" onclick="toggleChipFilter('tglHideTrashed')">휴지통 항목 숨기기</button>
+    <button class="chip-toggle on" data-filter="tglHidePerma" onclick="toggleChipFilter('tglHidePerma')">완전삭제 숨기기</button>
+    <button class="chip-toggle" data-filter="tglCollapsed" onclick="toggleChipFilter('tglCollapsed')">모두 접기</button>
     <div class="divider"></div>
-    <button onclick="selectAllFiltered()" title="지금 화면에 보이는 아이템 모두를 다중선택에 추가">☑️ 전체 선택</button>
-    <button onclick="clearBulkSel()" title="다중선택(파란 테두리) 전체 해제">▢ 전체 선택 해제</button>
-    <div class="divider"></div>
-    <button onclick="clearMarks()" title="삭제 표시(빨간 테두리) 전체 해제">🗑️ 삭제표시 전체 해제</button>
+    <button onclick="selectAllFiltered()" title="지금 화면에 보이는 아이템 모두를 다중선택에 추가" class="pill-btn">전체 선택</button>
+    <button onclick="clearBulkSel()" title="다중선택 전체 해제" class="pill-btn">선택 해제</button>
+    <button onclick="clearMarks()" title="삭제 표시 전체 해제" class="pill-btn danger">삭제표시 전체 해제</button>
   </div>
 
   <div class="row">
@@ -1231,11 +1226,17 @@ HTML_PAGE = """<!DOCTYPE html>
 </header>
 <main id="main"><div class="progress">로딩 중...</div></main>
 <div id="footer">
-  <div class="count" onclick="openMarkedDialog()" style="cursor:pointer; user-select:none;">
-    삭제 표시: <b id="marked-count">0</b>개 · 절약 예상: <b id="marked-size">0 B</b>
-    <span style="color:#888; font-size:12px; margin-left:8px;">▲ 목록 보기</span>
+  <div class="footer-info" onclick="openMarkedDialog()" title="삭제 표시된 아이템 목록 보기">
+    <div class="footer-sel-count"><b id="bulkCount">0</b>개 선택됨</div>
+    <div class="footer-sub">삭제 표시 <b id="marked-count">0</b>개 · 절약 <b id="marked-size" class="red">0 B</b></div>
   </div>
-  <button onclick="performDelete()" class="primary">🗑️ 휴지통으로 이동</button>
+  <button class="pill-btn" onclick="clearBulkSel()" title="다중선택 전체 해제">선택 해제</button>
+  <div style="flex:1;"></div>
+  <span class="label">선택 항목을</span>
+  <select id="bulkCat"><option value="">카테고리 선택…</option></select>
+  <button class="blue" onclick="applyBulkCategory()" id="applyCatBtn" disabled>카테고리 지정</button>
+  <div class="divider"></div>
+  <button class="danger-outline" onclick="performDelete()" id="toTrashBtn" disabled>휴지통으로 이동</button>
 </div>
 <dialog id="settings-dialog" style="max-width: 560px; width: 90vw;">
   <button class="dlg-close" onclick="document.getElementById('settings-dialog').close()">✕</button>
@@ -1331,12 +1332,6 @@ HTML_PAGE = """<!DOCTYPE html>
 
   </div>
 </dialog>
-<div id="bulkBar">
-  <span class="info">📌 <b id="bulkCount">0</b>개 선택됨</span>
-  <select id="bulkCat"><option value="">카테고리 선택...</option></select>
-  <button onclick="applyBulkCategory()" class="blue">✓ 카테고리 지정</button>
-  <button onclick="clearBulkSel()">선택 해제</button>
-</div>
 <dialog id="failed-dialog" style="max-width: 600px; width: 90vw;">
   <button class="dlg-close" onclick="document.getElementById('failed-dialog').close()">✕</button>
   <h3>⚠️ 일부 파일 이동 실패</h3>
@@ -1382,6 +1377,43 @@ let showOverrideOnly = false;
 let hideTrashed = false;
 let hidePerma = true;
 let editMode = 'delete';  // 'delete' | 'category'
+const FILTER_KEYS = ['tglMarked', 'tglOverride', 'tglHideTrashed', 'tglHidePerma', 'tglCollapsed'];
+
+function applyFilterState(key, val) {
+  if (key === 'tglMarked') showMarkedOnly = val;
+  else if (key === 'tglOverride') showOverrideOnly = val;
+  else if (key === 'tglHideTrashed') hideTrashed = val;
+  else if (key === 'tglHidePerma') hidePerma = val;
+  else if (key === 'tglCollapsed') collapsedMode = val;
+}
+function setChipFilterUI(key, val) {
+  const btn = document.querySelector(`.chip-toggle[data-filter="${key}"]`);
+  if (btn) btn.classList.toggle('on', val);
+  applyFilterState(key, val);
+}
+function toggleChipFilter(key) {
+  const btn = document.querySelector(`.chip-toggle[data-filter="${key}"]`);
+  const isOn = btn.classList.toggle('on');
+  applyFilterState(key, isOn);
+  updateFilterBadge();
+  render();
+}
+function updateFilterBadge() {
+  const onCount = FILTER_KEYS.filter(k => {
+    const btn = document.querySelector(`.chip-toggle[data-filter="${k}"]`);
+    return btn && btn.classList.contains('on');
+  }).length;
+  const btn = document.getElementById('filterToggleBtn');
+  if (!btn) return;
+  btn.textContent = onCount ? `필터 · ${onCount}` : '필터';
+  btn.classList.toggle('active', onCount > 0);
+}
+function toggleFilterPanel() {
+  const panel = document.getElementById('filterPanel');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'flex' : 'none';
+  localStorage.setItem('ccm_filter_panel_open', open ? '1' : '0');
+}
 
 function human(bytes) {
   const u = ['B','KB','MB','GB'];
@@ -1455,7 +1487,7 @@ function populateCatFilter() {
   const metaHtml = [`<div class="chip ${metaFilter === '' ? 'on' : ''}" data-meta="">전체 <span class="count">${MANIFEST.total_pkgs}</span></div>`];
   for (const [mname, mdata] of Object.entries(meta)) {
     if (metaCounts[mname] === 0) continue;
-    metaHtml.push(`<div class="chip ${metaFilter === mname ? 'on' : ''}" data-meta="${mname}">${mdata.icon} ${mname} <span class="count">${metaCounts[mname]}</span></div>`);
+    metaHtml.push(`<div class="chip ${metaFilter === mname ? 'on' : ''}" data-meta="${mname}">${mname} <span class="count">${metaCounts[mname]}</span></div>`);
   }
   metaBar.innerHTML = metaHtml.join('');
   metaBar.querySelectorAll('.chip').forEach(el => {
@@ -1476,7 +1508,7 @@ function populateCatFilter() {
     for (const sub of meta[metaFilter].subs) {
       const n = catCounts[sub] || 0;
       if (n === 0) continue;
-      subHtml.push(`<div class="subchip ${subFilter === sub ? 'on' : ''}" data-sub="${sub}">${sub} <span style="opacity:.7">${n}</span></div>`);
+      subHtml.push(`<div class="subchip ${subFilter === sub ? 'on' : ''}" data-sub="${sub}">${sub} <span class="count">${n}</span></div>`);
     }
     subBar.innerHTML = subHtml.join('');
     subBar.querySelectorAll('.subchip').forEach(el => {
@@ -1569,6 +1601,9 @@ function buildGroups() {
 
 function render() {
   const main = document.getElementById('main');
+  // ctxMenu는 카테고리 메뉴가 열릴 때 특정 .grid 안으로 이동됨 - main을 비우기 전에 구출
+  const _ctxMenu = document.getElementById('ctxMenu');
+  if (_ctxMenu && main.contains(_ctxMenu)) { document.body.appendChild(_ctxMenu); _ctxMenu.style.display = 'none'; }
   main.innerHTML = '';
   if (!MANIFEST || !MANIFEST.creators.length) {
     main.innerHTML = `<div class="progress" style="padding:40px;">
@@ -1619,17 +1654,33 @@ function render() {
     const section = document.createElement('section');
     section.className = 'creator' + (collapsedMode ? ' collapsed' : '');
     const markedInCreator = items.filter(it => state[it.path]).length;
+    const slashIdx = c.name.lastIndexOf('/');
+    const crumbParent = slashIdx > -1 ? c.name.slice(0, slashIdx) : '';
+    const crumbLeaf = slashIdx > -1 ? c.name.slice(slashIdx + 1) : c.name;
     section.innerHTML = `
-      <div class="creator-header" onclick="if(!event.target.matches('button'))this.parentElement.classList.toggle('collapsed')">
-        <h2>${escapeHtml(c.name)}</h2>
-        <span class="creator-count">${items.length}개 · ${human(c._stats.size)}${markedInCreator ? ` <span class="badge warn">🗑️ ${markedInCreator}</span>`:''}</span>
+      <div class="creator-header" onclick="if(!event.target.closest('button'))this.parentElement.classList.toggle('collapsed')">
+        ${crumbParent ? `<span class="crumb-parent">${escapeHtml(crumbParent)} /</span>` : ''}
+        <h2>${escapeHtml(crumbLeaf)}</h2>
+        <span class="creator-count">${items.length}개 · ${human(c._stats.size)}</span>
+        ${markedInCreator ? `<span class="creator-marked-badge">삭제 표시 ${markedInCreator}</span>` : ''}
         <div class="creator-actions">
-          <button onclick="markCreator('${escapeAttr(c.name)}', true)" title="이 폴더 전체를 삭제 대상으로 표시">🗑️ 폴더 전체 삭제표시</button>
-          <button onclick="markCreator('${escapeAttr(c.name)}', false)" title="이 폴더의 삭제 표시 전체 해제">✕ 폴더 전체 표시 해제</button>
+          <button class="folder-select-btn" title="이 폴더의 모든 아이템을 다중선택에 추가">폴더 전체 선택</button>
+          <button class="folder-mark-btn danger-hover" title="이 폴더 전체를 삭제 대상으로 표시">전체 삭제표시</button>
         </div>
       </div>
       <div class="grid"></div>
     `;
+    section.querySelector('.folder-select-btn').onclick = () => {
+      let added = 0;
+      for (const it of items) {
+        if (it.trashed || it.perma_deleted) continue;
+        if (!bulkSel.has(it.path)) { bulkSel.add(it.path); added++; }
+      }
+      updateBulkBar();
+      render();
+      if (added) toast(`✅ ${added}개 다중선택에 추가됨`);
+    };
+    section.querySelector('.folder-mark-btn').onclick = () => markCreator(c.name, true);
     const grid = section.querySelector('.grid');
     for (const it of items) {
       const div = document.createElement('div');
@@ -1656,18 +1707,19 @@ function render() {
       } else {
         thumbHtml = `<div class="no-thumb">썸네일 없음</div>`;
       }
-      const trashBadge = it.perma_deleted ? '<div class="trash-badge" style="background:rgba(60,0,0,.85);">✖ 완전삭제</div>'
-                        : it.trashed ? '<div class="trash-badge">🗑️ 휴지통</div>'
+      const trashBadge = it.perma_deleted ? '<div class="trash-badge" style="background:rgba(60,0,0,.85);">완전삭제</div>'
+                        : it.trashed ? '<div class="trash-badge">휴지통</div>'
                         : '';
       const overrideClass = it.override ? ' override' : '';
-      const catTitle = it.override ? '수동 지정' : (it.casp ? 'CASP 파싱' : '파일명 추측') + ' (우클릭으로 변경)';
-      const catIcon = it.cat_icon ? `<div class="cat-icon${overrideClass}" title="${escapeHtml(catTitle + ': ' + (it.cats||[]).join(', '))}" data-item-path="${escapeHtml(it.path)}" data-item-cat="${escapeHtml(it.primary_cat||'')}">${it.cat_icon}</div>` : '';
+      const catLabel = it.primary_cat || (it.cats && it.cats[0]) || '기타';
+      const catTitle = it.override ? '수동 지정' : (it.casp ? 'CASP 파싱' : '파일명 추측') + ' (클릭으로 변경)';
+      const catPill = `<div class="cat-pill${overrideClass}" title="${escapeHtml(catTitle + ': ' + (it.cats||[]).join(', '))}" data-item-path="${escapeHtml(it.path)}" data-item-cat="${escapeHtml(it.primary_cat||'')}">${escapeHtml(catLabel)}</div>`;
       const creatorSubtitle = it._creator ? `<div class="creator-sub">${escapeHtml(it._creator)}</div>` : '';
       div.dataset.thumbs = JSON.stringify(it.thumbs);
       // 44자 초과 시 hover 팝오버로 전체 이름 보여줌 (짧으면 name-full 안 만듦)
       const needsPopover = it.file.length > 44;
       const nameFull = needsPopover ? `<div class="name-full">${escapeHtml(it.file)}</div>` : '';
-      div.innerHTML = thumbHtml + trashBadge + catIcon + `<div class="sz">${human(it.size)}</div>${creatorSubtitle}<div class="name">${escapeHtml(it.file)}</div>${nameFull}`;
+      div.innerHTML = `<div class="thumb-frame">${thumbHtml}${trashBadge}${catPill}<div class="sel-badge">✓</div><div class="sz">${human(it.size)}</div></div>${creatorSubtitle}<div class="name">${escapeHtml(it.file)}</div>${nameFull}`;
       const clickHandler = it.perma_deleted
         ? () => toast('❌ 완전삭제된 파일입니다 (되돌릴 수 없음)')
         : it.trashed
@@ -1722,19 +1774,19 @@ function render() {
         nameFullEl.addEventListener('click', copyName);
         nameFullEl.addEventListener('contextmenu', nameRightClick);
       }
-      // 우클릭 or cat-icon 클릭 → 카테고리 변경 메뉴
-      const catEl = div.querySelector('.cat-icon');
+      // 우클릭 or 카테고리 필 클릭 → 카테고리 변경 메뉴 (해당 아이템에 앵커됨)
+      const catEl = div.querySelector('.cat-pill');
       if (catEl) {
         catEl.addEventListener('click', (e) => {
           e.stopPropagation();
-          // 우클릭/카테고리 아이콘 클릭은 항상 그 아이템 하나만
-          // (다중 적용은 하단 bulk 바나 드래그 앤 드롭 사용)
-          showCategoryMenu(e, [it.path], it.primary_cat);
+          // 카테고리 필 클릭은 항상 그 아이템 하나만
+          // (다중 적용은 하단 bulk 바나 chip 드래그 앤 드롭 사용)
+          showCategoryMenu(div, [it.path], it.primary_cat);
         });
       }
       div.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        showCategoryMenu(e, [it.path], it.primary_cat);
+        showCategoryMenu(div, [it.path], it.primary_cat);
       });
       // Drag: 카테고리 chip으로 드래그해서 카테고리 지정
       div.addEventListener('dragstart', (e) => {
@@ -1764,17 +1816,14 @@ function render() {
 
 function resetFilters() {
   currentFilter = '';
-  showMarkedOnly = false;
-  showOverrideOnly = false;
-  hideTrashed = false;
-  hidePerma = false;
   metaFilter = '';
   subFilter = '';
   const s = document.getElementById('search'); if (s) s.value = '';
-  const t1 = document.getElementById('tglMarked'); if (t1) t1.checked = false;
-  const t2 = document.getElementById('tglOverride'); if (t2) t2.checked = false;
-  const t3 = document.getElementById('tglHideTrashed'); if (t3) t3.checked = false;
-  const t4 = document.getElementById('tglHidePerma'); if (t4) t4.checked = false;
+  setChipFilterUI('tglMarked', false);
+  setChipFilterUI('tglOverride', false);
+  setChipFilterUI('tglHideTrashed', false);
+  setChipFilterUI('tglHidePerma', false);
+  updateFilterBadge();
   render();
 }
 
@@ -1798,17 +1847,16 @@ function toggle(path) {
 }
 
 function updateBulkBar() {
-  const bar = document.getElementById('bulkBar');
   const count = bulkSel.size;
   document.getElementById('bulkCount').textContent = count;
-  bar.style.display = count > 0 ? 'flex' : 'none';
-  document.body.classList.toggle('has-bulk', count > 0);
+  const applyBtn = document.getElementById('applyCatBtn');
+  if (applyBtn) applyBtn.disabled = count === 0;
   // 드롭다운 채우기
   const sel = document.getElementById('bulkCat');
-  if (sel.options.length <= 1 && MANIFEST) {
+  if (sel && sel.options.length <= 1 && MANIFEST) {
     const cats = MANIFEST.all_categories || [];
-    sel.innerHTML = '<option value="">카테고리 선택...</option>' +
-      cats.map(c => `<option value="${escapeHtml(c.name)}">${c.icon} ${c.name}</option>`).join('') +
+    sel.innerHTML = '<option value="">카테고리 선택…</option>' +
+      cats.map(c => `<option value="${escapeHtml(c.name)}">${c.name}</option>`).join('') +
       '<option value="__reset__">↺ 수동 지정 해제 (자동 재분류)</option>';
   }
 }
@@ -1960,6 +2008,9 @@ async function _copyText(text, label) {
 
 function showNameCopyMenu(event, item, creatorName) {
   const menu = document.getElementById('ctxMenu');
+  document.body.appendChild(menu);  // 카테고리 메뉴가 grid 안으로 옮겨놨을 수 있으니 body로 복귀
+  menu.style.position = 'fixed';
+  menu.style.width = '260px';
   const clean = item.file.replace(/\\.package$/i, '');
   const opts = [
     {label: '파일명 복사 (확장자 제외)', val: clean, hint: '기본'},
@@ -1968,10 +2019,11 @@ function showNameCopyMenu(event, item, creatorName) {
     {label: '카테고리 복사', val: (item.cats || [item.primary_cat || '기타']).join(', ')},
     {label: '경로 복사', val: item.path},
   ];
-  let html = `<div class="ctx-header">📋 복사 옵션</div>`;
-  html += opts.map((o, i) => `<div class="ctx-item" data-idx="${i}">${escapeHtml(o.label)}${o.hint?` <span style="color:#999;font-size:10px;margin-left:auto;">${o.hint}</span>`:''}</div>`).join('');
+  let html = `<div class="ctx-header"><div class="ctx-title">복사 옵션</div></div><div class="ctx-list" style="padding:6px 7px;">`;
+  html += opts.map((o, i) => `<div class="ctx-item" data-idx="${i}"><span>${escapeHtml(o.label)}</span>${o.hint?`<span style="color:var(--c-text-subtle);font-size:10px;">${o.hint}</span>`:'<span></span>'}</div>`).join('');
+  html += `</div>`;
   menu.innerHTML = html;
-  const x = Math.min(event.clientX, window.innerWidth - 250);
+  const x = Math.min(event.clientX, window.innerWidth - 270);
   const y = Math.min(event.clientY, window.innerHeight - 250);
   menu.style.left = x + 'px'; menu.style.top = y + 'px'; menu.style.display = 'block';
   menu.querySelectorAll('.ctx-item').forEach(el => {
@@ -1984,34 +2036,93 @@ function showNameCopyMenu(event, item, creatorName) {
   });
 }
 
-function showCategoryMenu(event, pathOrPaths, currentCat) {
-  // 배열 or 단일 경로 둘 다 받음
+// 카테고리 메뉴를 3개 섹션으로 묶어 보여줌 (진단안 스펙: 얼굴·피부 / 의상 / 기타)
+const CATEGORY_MENU_SECTIONS = [
+  ['얼굴 · 피부', ['눈썹', '눈속눈썹', '입술', '메이크업', '렌즈', '스킨', '스킨디테일']],
+  ['의상', ['상의', '하의', '전신', '수영복', '잠옷', '속옷', '신발']],
+  ['기타', ['헤어', '모자', '액세서리', '유틸', '기타']],
+];
+
+function showCategoryMenu(anchorEl, pathOrPaths, currentCat) {
+  // anchorEl: item div element(단일 대상 클릭) 이거나, 배치 액션이면 event 객체(폴백)
   const paths = Array.isArray(pathOrPaths) ? pathOrPaths : [pathOrPaths];
   const isBulk = paths.length > 1;
   const menu = document.getElementById('ctxMenu');
-  const cats = MANIFEST.all_categories || [];
-  const label = isBulk
-    ? `<b style="color:#4a90e2;">📌 다중 ${paths.length}개</b> 카테고리 변경`
-    : `카테고리 변경 <span style="color:#999">(${paths[0].split('/').pop()})</span>`;
-  let html = `<div class="ctx-header">${label}</div>`;
-  for (const c of cats) {
-    const cls = !isBulk && c.name === currentCat ? ' current' : '';
-    html += `<div class="ctx-item${cls}" data-cat="${escapeHtml(c.name)}">${c.icon} ${c.name}</div>`;
+  menu.style.width = '300px';
+  const catNameSet = new Set((MANIFEST.all_categories || []).map(c => c.name));
+
+  const fileLabel = isBulk ? `다중 ${paths.length}개` : paths[0].split('/').pop();
+  const titleLabel = isBulk ? '카테고리 변경' : '카테고리 변경';
+  menu.innerHTML = `
+    <div class="ctx-header">
+      <div class="ctx-title">${titleLabel}</div>
+      <div class="ctx-file">${escapeHtml(fileLabel)}</div>
+    </div>
+    <div class="ctx-search-wrap"><input type="text" class="ctx-search" placeholder="카테고리 검색" autocomplete="off"></div>
+    <div class="ctx-list"></div>
+    <div class="ctx-reset">↺ 수동 지정 해제 (자동 재분류)</div>
+  `;
+
+  const listEl = menu.querySelector('.ctx-list');
+  const searchEl = menu.querySelector('.ctx-search');
+
+  function renderList(query) {
+    const q = (query || '').trim().toLowerCase();
+    let html = '';
+    for (const [section, labels] of CATEGORY_MENU_SECTIONS) {
+      const visible = labels.filter(l => catNameSet.has(l) && (!q || l.toLowerCase().includes(q)));
+      if (!visible.length) continue;
+      html += `<div class="ctx-section">${escapeHtml(section)}</div>`;
+      for (const label of visible) {
+        const on = !isBulk && label === currentCat;
+        html += `<div class="ctx-item${on ? ' current' : ''}" data-cat="${escapeHtml(label)}"><span>${escapeHtml(label)}</span><span class="ctx-check">✓</span></div>`;
+      }
+    }
+    listEl.innerHTML = html || `<div style="padding:14px 9px; color:var(--c-text-subtle); font-size:12px;">일치하는 카테고리 없음</div>`;
+    listEl.querySelectorAll('.ctx-item').forEach(el => {
+      el.onclick = async () => {
+        menu.style.display = 'none';
+        await applyToPaths(paths, el.dataset.cat || '__reset__');
+      };
+    });
   }
-  html += `<div class="ctx-item reset" data-cat="">↺ 수동 지정 해제 (자동 재분류)</div>`;
-  menu.innerHTML = html;
-  const x = Math.min(event.clientX, window.innerWidth - 200);
-  const y = Math.min(event.clientY, window.innerHeight - 300);
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
+  renderList('');
+  searchEl.addEventListener('input', () => renderList(searchEl.value));
+  menu.querySelector('.ctx-reset').onclick = async () => {
+    menu.style.display = 'none';
+    await applyToPaths(paths, '__reset__');
+  };
+
+  // 위치 계산: anchorEl이 아이템이면 그 옆(오른쪽, 공간 없으면 왼쪽)에 앵커. 아니면 커서 위치(fixed).
+  const isItemAnchor = anchorEl instanceof HTMLElement;
+  if (isItemAnchor) {
+    const grid = anchorEl.closest('.grid');
+    grid.appendChild(menu);
+    menu.style.position = 'absolute';
+    const menuW = 300;
+    const gridW = grid.clientWidth;
+    const left = anchorEl.offsetLeft;
+    const top = anchorEl.offsetTop;
+    const itemW = anchorEl.offsetWidth;
+    const spaceRight = gridW - (left + itemW);
+    if (spaceRight >= menuW + 12) {
+      menu.style.left = (left + itemW + 12) + 'px';
+    } else if (left >= menuW + 12) {
+      menu.style.left = (left - menuW - 12) + 'px';
+    } else {
+      menu.style.left = Math.max(0, gridW - menuW) + 'px';
+    }
+    menu.style.top = top + 'px';
+  } else {
+    // 폴백: 이벤트 객체가 넘어온 경우 (구버전 호출 대비) — 커서 위치에 고정
+    document.body.appendChild(menu);
+    menu.style.position = 'fixed';
+    const ev = anchorEl;
+    menu.style.left = Math.min(ev.clientX, window.innerWidth - 320) + 'px';
+    menu.style.top = Math.min(ev.clientY, window.innerHeight - 300) + 'px';
+  }
   menu.style.display = 'block';
-  menu.querySelectorAll('.ctx-item').forEach(el => {
-    el.onclick = async () => {
-      menu.style.display = 'none';
-      const cat = el.dataset.cat;
-      await applyToPaths(paths, cat || '__reset__');
-    };
-  });
+  searchEl.focus();
 }
 document.addEventListener('click', (e) => {
   const menu = document.getElementById('ctxMenu');
@@ -2044,9 +2155,11 @@ function updateFooter() {
   const marked = Object.keys(state);
   document.getElementById('marked-count').textContent = marked.length;
   let sz = 0;
-  if (MANIFEST) for (const c of MANIFEST.creators)
+  if (MANIFEST) for (const c of (MANIFEST.folders || MANIFEST.creators))
     for (const it of c.items) if (state[it.path]) sz += it.size;
   document.getElementById('marked-size').textContent = human(sz);
+  const toTrashBtn = document.getElementById('toTrashBtn');
+  if (toTrashBtn) toTrashBtn.disabled = marked.length === 0;
 }
 
 function showOnlyMarked() { showMarkedOnly = !showMarkedOnly; render(); }
@@ -2380,14 +2493,17 @@ async function postBulkAction() {
     s.value = ''; currentFilter = ''; clearBtn.style.display = 'none'; render(); s.focus();
   });
 })();
-document.getElementById('sortBy').addEventListener('change', e => {
-  sortBy = e.target.value;
-  render();
-});
 document.getElementById('itemSortBy').addEventListener('change', e => {
   itemSortBy = e.target.value;
   render();
 });
+// 필터 패널 초기 상태 복원 (기본 열림)
+(function initFilterPanel() {
+  const saved = localStorage.getItem('ccm_filter_panel_open');
+  const open = saved === null ? true : saved === '1';
+  document.getElementById('filterPanel').style.display = open ? 'flex' : 'none';
+  updateFilterBadge();
+})();
 // 아이템 크기 슬라이더
 (function initZoom() {
   const slider = document.getElementById('zoomSlider');
@@ -2414,26 +2530,6 @@ document.getElementById('modeSeg').querySelectorAll('button').forEach(b => {
     document.body.classList.toggle('mode-category', editMode === 'category');
     toast(editMode === 'category' ? '🏷️ 카테고리 편집 모드' : '🗑️ 삭제 선택 모드');
   };
-});
-document.getElementById('tglMarked').addEventListener('change', e => {
-  showMarkedOnly = e.target.checked;
-  render();
-});
-document.getElementById('tglCollapsed').addEventListener('change', e => {
-  collapsedMode = e.target.checked;
-  render();
-});
-document.getElementById('tglOverride').addEventListener('change', e => {
-  showOverrideOnly = e.target.checked;
-  render();
-});
-document.getElementById('tglHideTrashed').addEventListener('change', e => {
-  hideTrashed = e.target.checked;
-  render();
-});
-document.getElementById('tglHidePerma').addEventListener('change', e => {
-  hidePerma = e.target.checked;
-  render();
 });
 
 function selectAllFiltered() {
