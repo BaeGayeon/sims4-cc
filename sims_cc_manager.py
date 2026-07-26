@@ -831,7 +831,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .stats { color: var(--c-text-label); font-size: 11.5px; display: flex; gap: 12px; flex-shrink: 0; white-space: nowrap; }
   .stats b { color: var(--c-text-muted); font-weight: 600; }
   /* 접기 대상 영역 */
-  .collapsible-body { }
+  /* title-row와 좌우 여백을 통일 (16px) - 이전엔 .row가 여백 없이 붙어 있었음 */
+  .collapsible-body { padding: 0 16px; }
   body.header-collapsed .collapsible-body { display: none; }
   body.header-collapsed #collapseBtn { transform: rotate(180deg); }
   #collapseBtn { transition: transform .15s; }
@@ -845,10 +846,10 @@ HTML_PAGE = """<!DOCTYPE html>
     /* 라벨은 유지 - 사용자가 뭔지 알아야 함 */
   }
   @media (max-width: 640px) {
-    header { padding: 6px 10px; }
+    .title-row, .collapsible-body { padding-left: 10px; padding-right: 10px; }
     .row { padding: 4px 0; }
     #search { width: 100% !important; }
-    #footer { flex-wrap: wrap; height: auto; padding: 6px 10px; }
+    #footer { padding: 6px 10px; }
   }
   .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 5px 0; border-top: 1px solid var(--c-border); }
   .row:first-of-type { border-top: none; padding-top: 3px; }
@@ -938,7 +939,7 @@ HTML_PAGE = """<!DOCTYPE html>
   .subchip.on { background: var(--c-text); color: #fff; border-color: var(--c-text); font-weight: 600; }
   .subchip .count { font: 600 10px ui-monospace, Menlo, monospace; color: var(--c-text-subtle); margin-left: 3px; }
   .subchip.on .count { color: rgba(255,255,255,.7); }
-  .label { font-size: 11.5px; color: var(--c-text-label); margin-right: 4px; font-weight: 500; }
+  .label { font-size: 11.5px; color: var(--c-text-label); margin-right: 4px; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
   main { padding: 16px; }
   .creator { background: var(--c-surface); margin-bottom: 14px; border-radius: var(--radius-md); overflow: visible; box-shadow: var(--shadow-sm); border: 1px solid var(--c-border); }
   .creator-header { padding: 12px 14px; background: var(--c-surface); border-bottom: 1px solid var(--c-border); display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
@@ -951,9 +952,9 @@ HTML_PAGE = """<!DOCTYPE html>
   .creator-actions button.danger-hover:hover { background: var(--c-red-bg) !important; color: var(--c-red) !important; border-color: rgba(178,60,43,.3) !important; }
   .grid { padding: 14px; display: flex; flex-wrap: wrap; gap: 12px; position: relative; }
   .item { position: relative; width: var(--h-thumb); cursor: pointer; }
-  .item .thumb-frame { position: relative; width: var(--h-thumb); height: var(--h-thumb); border-radius: 9px; overflow: hidden; border: 2px solid var(--c-border-strong); box-sizing: border-box; background: #f9f9f9; }
-  /* 실제 CAS 썸네일은 세로가 긴 비율(104x148)이라 cover로 자르면 얼굴/발이 잘림 → contain */
-  .item .thumb-img { display: block; width: 100%; height: 100%; object-fit: contain; background: #f4f2ee; }
+  /* CAS 썸네일 원본 비율(104x148, 세로형)을 유지 - 정사각형으로 강제하지 않음 */
+  .item .thumb-frame { position: relative; width: var(--h-thumb); aspect-ratio: 104 / 148; border-radius: 9px; overflow: hidden; border: 2px solid var(--c-border-strong); box-sizing: border-box; background: #f9f9f9; }
+  .item .thumb-img { display: block; width: 100%; height: 100%; object-fit: cover; background: #f4f2ee; }
   .item:hover .thumb-frame { border-color: var(--c-blue); }
   body.mode-category .item:not(.trashed):hover { cursor: cell; }
   body.mode-category .item:not(.trashed):hover .thumb-frame { border-color: var(--c-blue); }
@@ -1011,14 +1012,17 @@ HTML_PAGE = """<!DOCTYPE html>
   .thumb-counter { color: white; padding: 0 4px; font-size: 9px; font-variant-numeric: tabular-nums; }
   .collapsed .grid, .collapsed .creator-actions { display: none; }
   /* 병합된 하단 바: 선택됨 + 삭제표시 + 카테고리 지정 + 휴지통 이동 전부 한 줄 */
-  #footer { position: fixed; bottom: 0; left: 0; right: 0; height: 58px; padding: 0 16px; background: var(--c-surface); border-top: 1px solid var(--c-border-strong); box-shadow: 0 -2px 10px rgba(0,0,0,.04); z-index: 100; display: flex; align-items: center; gap: 14px; }
-  .footer-info { display: flex; flex-direction: column; gap: 2px; min-width: 190px; cursor: pointer; user-select: none; }
+  /* flex-wrap: 좁은 화면에서는 줄바꿈으로 처리 - 글자 단위로 깨지는 것 방지 */
+  #footer { position: fixed; bottom: 0; left: 0; right: 0; min-height: 58px; height: auto; padding: 8px 16px; background: var(--c-surface); border-top: 1px solid var(--c-border-strong); box-shadow: 0 -2px 10px rgba(0,0,0,.04); z-index: 100; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+  .footer-info { display: flex; flex-direction: column; gap: 2px; min-width: 190px; flex-shrink: 0; cursor: pointer; user-select: none; }
   .footer-sel-count { font-size: 12.5px; font-weight: 600; color: var(--c-text); }
   .footer-sub { font-size: 11px; color: var(--c-text-label); }
   .footer-sub b { font-weight: 600; }
   .footer-sub .red { color: var(--c-red); }
-  #footer select { height: 34px; }
-  #footer button.blue, #footer button.danger-outline { height: 34px; padding: 0 16px; font-weight: 600; font-size: 12.5px; }
+  #footer select { height: 34px; flex-shrink: 0; }
+  #footer button.blue, #footer button.danger-outline { height: 34px; padding: 0 16px; font-weight: 600; font-size: 12.5px; flex-shrink: 0; }
+  #footer .divider { flex-shrink: 0; }
+  #footer > div[style*="flex:1"] { flex-shrink: 1; min-width: 0; }
   .danger-outline { background: var(--c-surface); color: var(--c-red); border: 1px solid rgba(178,60,43,.35) !important; }
   .danger-outline:hover:not(:disabled) { background: var(--c-red) !important; color: #fff !important; border-color: var(--c-red) !important; }
   .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 6px; opacity: 0; transition: opacity .3s; z-index: 200; }
@@ -1035,11 +1039,18 @@ HTML_PAGE = """<!DOCTYPE html>
   .progress-bar > div { height: 100%; background: #4a90e2; transition: width .3s; }
   dialog { border: none; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.2); padding: 20px; max-width: 500px; }
   dialog::backdrop { background: rgba(0,0,0,.5); }
-  /* 모달 우측 상단 X 닫기 버튼 통일 스타일 */
-  .dlg-close { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; padding: 0; font-size: 14px; border-radius: 50%; background: white; border: 1px solid #ddd; cursor: pointer; z-index: 10; }
+  /* 모달 우측 상단 X 닫기 버튼: 카드 안쪽에 온전히 위치, 다른 아이콘 버튼과 동일한 톤 */
+  .dlg-close { position: absolute; top: 14px; right: 14px; width: 26px; height: 26px; padding: 0; font-size: 13px; border-radius: 50%; background: transparent; border: none; color: var(--c-text-muted); cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; }
   kbd { background: #f0f0f0; border: 1px solid #ccc; border-bottom-width: 2px; border-radius: 3px; padding: 1px 6px; font-size: 11px; font-family: -apple-system, monospace; }
-  .dlg-close:hover { background: #f4f4f4; }
+  .dlg-close:hover { background: var(--c-bg); color: var(--c-text); }
   dialog { position: relative; }
+  /* 삭제표시 목록 다이얼로그의 개별 아이템 "표시 해제" 버튼 - 카테고리 펄과 동일한 코너 배치 */
+  .marked-remove-btn { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%; border: none; background: rgba(255,255,255,.92); color: var(--c-text-muted); font-size: 11px; padding: 0; cursor: pointer; z-index: 4; box-shadow: 0 1px 2px rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center; }
+  .marked-remove-btn:hover { background: var(--c-red); color: #fff; }
+  /* 휴지통 목록: 그리드 셀 폭에 맞춰 썸네일 프레임을 채움 (고정 --h-thumb 대신) */
+  .trash-tile.item, .marked-tile.item { width: 100%; }
+  .trash-tile .thumb-frame, .marked-tile .thumb-frame { width: 100%; }
+  .trash-check { position: absolute; top: 6px; left: 6px; z-index: 4; transform: scale(1.2); }
   .trash-item { padding: 6px 8px; border-bottom: 1px solid #eee; display: flex; gap: 8px; font-size: 12px; align-items: center; }
   .trash-item input { margin: 0; }
   /* Dark mode 규칙 */
@@ -1203,7 +1214,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <input type="range" id="zoomSlider" min="80" max="240" value="130" style="width: 96px; height: 20px; accent-color: var(--c-blue);" title="아이템 썸네일 크기">
   </div>
 
-  <div class="row" id="filterPanel" style="background:var(--c-surface-2); margin: 0 -16px; padding-left:16px; padding-right:16px; display:none;">
+  <div class="row" id="filterPanel" style="background:var(--c-surface-2); display:none;">
     <button class="chip-toggle" data-filter="tglMarked" onclick="toggleChipFilter('tglMarked')">지울 것만</button>
     <button class="chip-toggle" data-filter="tglOverride" onclick="toggleChipFilter('tglOverride')">수동 지정만</button>
     <button class="chip-toggle" data-filter="tglHideTrashed" onclick="toggleChipFilter('tglHideTrashed')">휴지통 항목 숨기기</button>
@@ -2186,14 +2197,16 @@ function openMarkedDialog() {
   document.getElementById('marked-summary').textContent = `(${items.length}개 · ${human(sz)})`;
   list.innerHTML = items.map(it => {
     const thumbHtml = it.thumbs && it.thumbs.length
-      ? `<img class="thumb-img" src="/thumbs/${it.thumbs[0]}" style="width:100%; display:block;">`
-      : `<div class="no-thumb" style="padding:40px 8px; text-align:center; color:#999; font-size:11px; background:#eee;">썸네일 없음</div>`;
+      ? `<img class="thumb-img" src="/thumbs/${it.thumbs[0]}">`
+      : `<div class="no-thumb">썸네일 없음</div>`;
     const needsPopover = it.file.length > 44;
     const nameFull = needsPopover ? `<div class="name-full">${escapeHtml(it.file)}</div>` : '';
-    return `<div class="item marked-tile" data-path="${escapeHtml(it.path)}" style="border:2px solid #d9534f; background:white;">
-      ${thumbHtml}
-      <button style="position:absolute; top:4px; right:4px; background:rgba(255,255,255,.9); border:1px solid #ccc; border-radius:50%; width:22px; height:22px; padding:0; cursor:pointer; font-size:12px; z-index:3;" title="표시 해제" onclick="unmarkFromDialog('${escapeAttr(it.path)}')">✕</button>
-      <div class="sz">${human(it.size)}</div>
+    return `<div class="item marked-tile marked" data-path="${escapeHtml(it.path)}">
+      <div class="thumb-frame">
+        ${thumbHtml}
+        <button class="marked-remove-btn" title="표시 해제" onclick="unmarkFromDialog('${escapeAttr(it.path)}')">✕</button>
+        <div class="sz">${human(it.size)}</div>
+      </div>
       <div class="name">${escapeHtml(it.file)}</div>
       ${nameFull}
     </div>`;
@@ -2318,7 +2331,7 @@ async function openTrash() {
       const thumbs = it.thumbs || [];
       let thumbHtml;
       if (thumbs.length) {
-        thumbHtml = `<img class="thumb-img" src="/thumbs/${thumbs[0]}" style="width:100%;display:block;">`;
+        thumbHtml = `<img class="thumb-img" src="/thumbs/${thumbs[0]}">`;
         if (thumbs.length > 1) {
           thumbHtml += `<div class="thumb-nav">
             <button class="thumb-btn thumb-prev" onclick="cycleThumb(event, this, -1)">◀</button>
@@ -2327,15 +2340,17 @@ async function openTrash() {
           </div>`;
         }
       } else {
-        thumbHtml = `<div class="no-thumb" style="padding:40px 8px; text-align:center; color:#999; font-size:11px; background:#eee;">썸네일 없음</div>`;
+        thumbHtml = `<div class="no-thumb">썸네일 없음</div>`;
       }
       const needsPopover = fileName.length > 44;
       const nameFull = needsPopover ? `<div class="name-full">${escapeHtml(fileName)}</div>` : '';
       return `
-        <label class="trash-tile item" data-thumbs='${JSON.stringify(thumbs).replace(/'/g, "&#39;")}' data-thumb-idx="0" style="background:white; display:block;">
-          <input type="checkbox" value="${escapeHtml(it.path)}" onchange="updateTrashSelectedCount()" style="position:absolute; top:6px; left:6px; z-index:3; transform:scale(1.3);">
-          ${thumbHtml}
-          <div class="sz">${human(it.size)}</div>
+        <label class="trash-tile item" data-thumbs='${JSON.stringify(thumbs).replace(/'/g, "&#39;")}' data-thumb-idx="0">
+          <div class="thumb-frame">
+            <input type="checkbox" class="trash-check" value="${escapeHtml(it.path)}" onchange="updateTrashSelectedCount()">
+            ${thumbHtml}
+            <div class="sz">${human(it.size)}</div>
+          </div>
           <div class="name">${escapeHtml(fileName)}</div>
           ${nameFull}
         </label>
