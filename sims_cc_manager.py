@@ -1150,13 +1150,18 @@ HTML_PAGE = """<!DOCTYPE html>
       <div id="searchHistory" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--radius-md); z-index:200; box-shadow:var(--shadow-md); overflow:hidden;"></div>
     </div>
     <div class="divider"></div>
-    <span class="label">묶음</span>
+    <span class="label">그룹</span>
     <div class="seg" id="groupSeg">
       <button data-v="creator" class="on">폴더별</button>
       <button data-v="category">카테고리별</button>
       <button data-v="date">날짜별</button>
     </div>
-    <span class="label" style="margin-left:6px;">정렬</span>
+    <select id="groupSortBy" title="그룹(폴더) 정렬" style="margin-left:4px;">
+      <option value="name">이름순</option>
+      <option value="size">용량순</option>
+      <option value="recent">최신순</option>
+    </select>
+    <span class="label" style="margin-left:6px;">아이템 정렬</span>
     <select id="itemSortBy">
       <option value="name">이름순</option>
       <option value="size">용량순</option>
@@ -1176,6 +1181,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <button class="chip-toggle on" data-filter="tglHidePerma" onclick="toggleChipFilter('tglHidePerma')">완전삭제 숨기기</button>
     <button class="chip-toggle" data-filter="tglCollapsed" onclick="toggleChipFilter('tglCollapsed')">모두 접기</button>
     <div class="divider"></div>
+    <span class="label">일괄 작업</span>
     <button onclick="selectAllFiltered()" title="지금 화면에 보이는 아이템 모두를 다중선택에 추가" class="pill-btn">전체 선택</button>
     <button onclick="clearBulkSel()" title="다중선택 전체 해제" class="pill-btn">전체 선택 해제</button>
     <button onclick="clearMarks()" title="삭제 표시 전체 해제" class="pill-btn danger">삭제표시 전체 해제</button>
@@ -2475,6 +2481,10 @@ document.getElementById('itemSortBy').addEventListener('change', e => {
   itemSortBy = e.target.value;
   render();
 });
+document.getElementById('groupSortBy').addEventListener('change', e => {
+  sortBy = e.target.value;
+  render();
+});
 // 필터 패널 초기 상태 복원 (기본 열림)
 (function initFilterPanel() {
   const saved = localStorage.getItem('ccm_filter_panel_open');
@@ -2497,6 +2507,8 @@ document.getElementById('groupSeg').querySelectorAll('button').forEach(b => {
   b.onclick = () => {
     groupBy = b.dataset.v;
     document.querySelectorAll('#groupSeg button').forEach(x => x.classList.toggle('on', x === b));
+    // 날짜별 그룹은 최신→옛 고정 순서라 그룹 정렬 컨트롤이 의미 없음
+    document.getElementById('groupSortBy').disabled = (groupBy === 'date');
     render();
   };
 });
