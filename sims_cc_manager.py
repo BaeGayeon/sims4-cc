@@ -841,9 +841,10 @@ HTML_PAGE = """<!DOCTYPE html>
     #search { width: 100% !important; }
     #footer { flex-wrap: wrap; height: auto; padding: 6px 10px; }
     #bulkBar { flex-wrap: wrap; padding: 6px 10px; }
-    /* 아이콘 전용 버튼 (휴지통, 통계) - 좁으면 텍스트 숨김 */
     .hide-narrow { display: none; }
+    .show-narrow-only { display: flex !important; }
   }
+  .show-narrow-only { display: none; }
   .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 5px 0; border-top: 1px solid var(--c-border); }
   .row:first-of-type { border-top: none; padding-top: 3px; }
   .group { display: inline-flex; align-items: center; gap: 6px; background: var(--c-bg); padding: 4px 10px; border-radius: var(--radius-sm); height: var(--h-input); }
@@ -1132,11 +1133,12 @@ HTML_PAGE = """<!DOCTYPE html>
     <div style="flex:1;"></div>
     <button onclick="undo()" id="undoBtn" title="되돌리기 (Cmd+Z)" class="icon-only" disabled>↶</button>
     <button onclick="rescan()" class="blue" title="Mods 폴더 다시 스캔">🔄 재스캔</button>
+    <button onclick="openTrash()" title="휴지통">🗑️ 휴지통</button>
+    <button onclick="openStats()" title="통계" class="hide-narrow">📊 통계</button>
     <div class="menu-wrap">
       <button onclick="toggleOverflowMenu(event)" class="icon-only" title="더보기">⋯</button>
       <div id="overflowMenu" class="overflow-menu">
-        <button onclick="openTrash(); closeOverflow();">🗑️ 휴지통</button>
-        <button onclick="openStats(); closeOverflow();">📊 통계</button>
+        <button onclick="openStats(); closeOverflow();" class="show-narrow-only">📊 통계</button>
         <button onclick="openSettings(); closeOverflow();">⚙️ 설정</button>
         <button onclick="openHelp(); closeOverflow();">❓ 도움말</button>
         <hr>
