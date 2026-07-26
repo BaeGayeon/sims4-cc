@@ -421,10 +421,14 @@ def _iter_packages():
                 yield Path(root) / f
 
 
+SCAN_PROGRESS = {"active": False, "current": 0, "total": 0, "name": ""}
+
+
 def scan_cc(progress_cb=None):
     """전체 Mods 폴더 스캔 → 폴더 경로별 그룹."""
     if not MODS.exists():
         return {"folders": [], "error": f"Mods 폴더 없음: {MODS}"}
+    SCAN_PROGRESS.update({"active": True, "current": 0, "total": 0, "name": "준비 중..."})
 
     # 폴더별 파일 그룹핑 - key는 Mods 기준 상대 폴더 경로
     from collections import defaultdict
@@ -437,6 +441,9 @@ def scan_cc(progress_cb=None):
     for i, pkg in enumerate(all_pkgs, 1):
         rel_pkg = pkg.relative_to(MODS)
         folder = str(rel_pkg.parent) if rel_pkg.parent != Path(".") else "(최상위)"
+        SCAN_PROGRESS["current"] = i
+        SCAN_PROGRESS["total"] = total_pkgs
+        SCAN_PROGRESS["name"] = folder
         if progress_cb and (i % 100 == 0 or i == total_pkgs):
             progress_cb(i, total_pkgs, folder)
 
@@ -500,6 +507,7 @@ def scan_cc(progress_cb=None):
         "total_thumbs": total_thumbs,
     }
     MANIFEST_PATH.write_text(json.dumps(manifest, ensure_ascii=False))
+    SCAN_PROGRESS.update({"active": False, "current": total_pkgs, "total": total_pkgs, "name": "완료"})
     return manifest
 
 
@@ -1784,11 +1792,53 @@ async function performDelete() {
 }
 
 async function rescan() {
-  document.getElementById('main').innerHTML = '<div class="progress">🔄 스캔 중... (몇 초 걸림)<div class="progress-bar"><div style="width:50%"></div></div></div>';
-  const res = await fetch('/api/scan', {method: 'POST'});
-  await res.json();
+  showScanOverlay(true);
+  await fetch('/api/scan', {method: 'POST'});
+  await pollScanProgress();
+  showScanOverlay(false);
   await loadManifest();
   toast('✅ 재스캔 완료');
+}
+
+function showScanOverlay(show) {
+  let ov = document.getElementById('scanOverlay');
+  if (!ov && show) {
+    ov = document.createElement('div');
+    ov.id = 'scanOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    ov.innerHTML = `<div style="background:white;padding:32px;border-radius:10px;min-width:360px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);">
+      <div style="font-size:32px;margin-bottom:8px;">🔄</div>
+      <h3 style="margin:0 0 12px 0;">CC 스캔 중...</h3>
+      <div id="scanOvName" style="color:#666;font-size:12px;margin-bottom:10px;word-break:break-all;min-height:16px;">준비 중...</div>
+      <div class="progress-bar" style="margin-top:6px;"><div id="scanOvBar" style="width:0%"></div></div>
+      <div id="scanOvCount" style="margin-top:8px;font-size:12px;color:#888;">0 / 0</div>
+    </div>`;
+    document.body.appendChild(ov);
+  }
+  if (ov && !show) ov.remove();
+}
+
+async function pollScanProgress() {
+  return new Promise((resolve) => {
+    const tick = async () => {
+      try {
+        const r = await fetch('/api/scan-progress');
+        const p = await r.json();
+        const bar = document.getElementById('scanOvBar');
+        const nameEl = document.getElementById('scanOvName');
+        const cntEl = document.getElementById('scanOvCount');
+        if (bar) {
+          const pct = p.total ? Math.round((p.current / p.total) * 100) : 0;
+          bar.style.width = pct + '%';
+          if (nameEl) nameEl.textContent = p.name || '';
+          if (cntEl) cntEl.textContent = `${p.current} / ${p.total}`;
+        }
+        if (!p.active) { resolve(); return; }
+      } catch {}
+      setTimeout(tick, 300);
+    };
+    tick();
+  });
 }
 
 async function openTrash() {
@@ -2314,6 +2364,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/trash":
             self._json(list_trash())
             return
+        if path == "/api/scan-progress":
+            self._json(dict(SCAN_PROGRESS))
+            return
         if path.startswith("/thumbs/"):
             name = path[len("/thumbs/"):]
             fp = THUMBS_DIR / name
@@ -2340,7 +2393,12 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/api/restore":
             self._json(restore_from_trash(data.get("paths", [])))
         elif path == "/api/scan":
-            self._json(scan_cc())
+            # 백그라운드 스레드에서 스캔, 프론트는 /api/scan-progress로 폴링
+            if not SCAN_PROGRESS["active"]:
+                SCAN_PROGRESS.update({"active": True, "current": 0, "total": 0, "name": "시작 중..."})
+                t = threading.Thread(target=scan_cc, daemon=True)
+                t.start()
+            self._json({"started": True})
         elif path == "/api/empty-trash":
             self._json(empty_trash())
         elif path == "/api/delete-from-trash":
