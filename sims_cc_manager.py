@@ -938,7 +938,11 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
 
   <div class="row">
-    <input type="search" id="search" placeholder="🔍 파일명·창작자 검색" style="width: 260px;">
+    <div style="position:relative; display:inline-block;">
+      <input type="search" id="search" placeholder="🔍 파일명·창작자 검색 (공백=AND)" style="width: 260px; padding-right: 26px;" autocomplete="off">
+      <button id="searchClear" type="button" title="지우기" style="position:absolute; right:4px; top:50%; transform:translateY(-50%); width:20px; height:20px; padding:0; border-radius:50%; border:none; background:#ddd; color:#333; cursor:pointer; font-size:11px; display:none; line-height:1;">✕</button>
+      <div id="searchHistory" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #ccc; border-radius:6px; margin-top:2px; z-index:200; box-shadow:0 4px 10px rgba(0,0,0,.15);"></div>
+    </div>
     <div class="group">
       <span class="label">그룹</span>
       <div class="seg" id="groupSeg">
@@ -1334,7 +1338,11 @@ function render() {
       if (showMarkedOnly && !state[it.path]) return false;
       if (showOverrideOnly && !it.override) return false;
       if (!matchesCatFilter(it.cats)) return false;
-      if (currentFilter && !it.file.toLowerCase().includes(currentFilter) && !c.name.toLowerCase().includes(currentFilter)) return false;
+      if (currentFilter) {
+        const hay = (it.file + ' ' + c.name).toLowerCase();
+        const terms = currentFilter.split(/\\s+/).filter(Boolean);
+        for (const t of terms) { if (!hay.includes(t)) return false; }
+      }
       return true;
     });
     if (itemSortBy === 'size') items = items.slice().sort((a,b) => b.size - a.size);
@@ -1877,10 +1885,48 @@ async function postBulkAction() {
   // 필요 시 사용자가 상단 '🔄 재스캔' 버튼 수동 클릭.
 }
 
-document.getElementById('search').addEventListener('input', e => {
-  currentFilter = e.target.value.toLowerCase();
-  render();
-});
+(function initSearch(){
+  const s = document.getElementById('search');
+  const clearBtn = document.getElementById('searchClear');
+  const hist = document.getElementById('searchHistory');
+  const HIST_KEY = 'ccm_search_history';
+  const loadHist = () => { try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch { return []; } };
+  const saveHist = (q) => {
+    if (!q) return;
+    const arr = loadHist().filter(x => x !== q);
+    arr.unshift(q);
+    localStorage.setItem(HIST_KEY, JSON.stringify(arr.slice(0, 5)));
+  };
+  const showHist = () => {
+    const arr = loadHist();
+    if (!arr.length || s.value) { hist.style.display = 'none'; return; }
+    hist.innerHTML = arr.map(q => `<div class="hist-item" data-q="${escapeHtml(q)}" style="padding:6px 10px; cursor:pointer; font-size:12px;">🕒 ${escapeHtml(q)}</div>`).join('');
+    hist.style.display = 'block';
+    hist.querySelectorAll('.hist-item').forEach(el => {
+      el.onmousedown = (ev) => {
+        ev.preventDefault();
+        s.value = el.dataset.q;
+        currentFilter = s.value.toLowerCase();
+        clearBtn.style.display = 'block';
+        hist.style.display = 'none';
+        render();
+      };
+    });
+  };
+  s.addEventListener('input', e => {
+    currentFilter = e.target.value.toLowerCase().trim();
+    clearBtn.style.display = e.target.value ? 'block' : 'none';
+    hist.style.display = 'none';
+    render();
+  });
+  s.addEventListener('focus', showHist);
+  s.addEventListener('blur', () => { setTimeout(() => { hist.style.display = 'none'; }, 150); });
+  s.addEventListener('change', () => saveHist(s.value.trim()));
+  s.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveHist(s.value.trim()); });
+  clearBtn.addEventListener('click', () => {
+    s.value = ''; currentFilter = ''; clearBtn.style.display = 'none'; render(); s.focus();
+  });
+})();
 document.getElementById('sortBy').addEventListener('change', e => {
   sortBy = e.target.value;
   render();
