@@ -937,7 +937,17 @@ HTML_PAGE = """<!DOCTYPE html>
   dialog { position: relative; }
   .trash-item { padding: 6px 8px; border-bottom: 1px solid #eee; display: flex; gap: 8px; font-size: 12px; align-items: center; }
   .trash-item input { margin: 0; }
-  /* Dark mode */
+  /* Dark mode 규칙 */
+  html[data-theme="light"] { color-scheme: light; }
+  html[data-theme="dark"] { color-scheme: dark; }
+  /* 라이트 강제 시 auto 다크 media 규칙 무시하도록 (우선순위 이용 - 아래 media 규칙에 :not() 적용은 각 규칙마다 못 넣으니 대신 명시적 다크 블록만 데이터-속성 기반, media 는 auto 만) */
+  @media (prefers-color-scheme: dark) {
+    html[data-theme="light"] body,
+    html[data-theme="light"] header,
+    html[data-theme="light"] dialog,
+    html[data-theme="light"] .item,
+    html[data-theme="light"] .creator { background: revert !important; color: revert !important; border-color: revert !important; }
+  }
   @media (prefers-color-scheme: dark) {
     body { background: #1a1a1a; color: #e0e0e0; }
     header { background: #242424; border-bottom-color: #333; box-shadow: 0 2px 4px rgba(0,0,0,.3); }
@@ -983,6 +993,52 @@ HTML_PAGE = """<!DOCTYPE html>
     .item.marked { border-color: #d9534f; background: #3a1e1e; }
     .item.marked.selected { background: #3a1e1e !important; }
   }
+  /* 명시적 다크 모드 (설정에서 선택 시) */
+
+    html[data-theme="dark"] body { background: #1a1a1a; color: #e0e0e0; }
+    html[data-theme="dark"] header { background: #242424; border-bottom-color: #333; box-shadow: 0 2px 4px rgba(0,0,0,.3); }
+    html[data-theme="dark"] .row { border-top-color: #2a2a2a; }
+    html[data-theme="dark"] .stats { color: #999; }
+    html[data-theme="dark"] .group { background: #2a2a2a; }
+    html[data-theme="dark"] .group .label, html[data-theme="dark"] .label { color: #888; }
+    html[data-theme="dark"] .divider { background: #333; }
+    html[data-theme="dark"] input[type=search], html[data-theme="dark"] select, html[data-theme="dark"] button { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
+    html[data-theme="dark"] button:hover { background: #333; }
+    html[data-theme="dark"] .seg { border-color: #444; }
+    html[data-theme="dark"] .seg button { background: #2a2a2a; color: #e0e0e0; }
+    html[data-theme="dark"] .seg button + button { border-left-color: #444; }
+    html[data-theme="dark"] .seg button.on { background: #555; }
+    html[data-theme="dark"] .chip { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
+    html[data-theme="dark"] .chip:hover { background: #333; }
+    html[data-theme="dark"] .subchip { background: #333; color: #e0e0e0; border-color: #444; }
+    html[data-theme="dark"] .subchip:hover { background: #3a3a3a; }
+    html[data-theme="dark"] .creator { background: #242424; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+    html[data-theme="dark"] .creator-header { background: #2a2a2a; border-bottom-color: #333; }
+    html[data-theme="dark"] .creator-count { color: #999; }
+    html[data-theme="dark"] .item { background: #2a2a2a; }
+    html[data-theme="dark"] .item .name { color: #bbb; }
+    html[data-theme="dark"] .item .name-full { background: #333; color: #e0e0e0; box-shadow: 0 -2px 6px rgba(0,0,0,.4); }
+    html[data-theme="dark"] .item .no-thumb { background: #333; color: #888; }
+    html[data-theme="dark"] .cat-icon { background: rgba(50,50,50,.92); color: #e0e0e0; }
+    html[data-theme="dark"] .item.trashed { background: #2a2a2a; border-color: #666; }
+    html[data-theme="dark"] .item.perma-deleted { background: #3a2a2a; }
+    html[data-theme="dark"] dialog { background: #242424; color: #e0e0e0; }
+    html[data-theme="dark"] .dlg-close { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+    html[data-theme="dark"] .dlg-close:hover { background: #333; }
+    html[data-theme="dark"] .progress { background: #2a2a2a; color: #e0e0e0; }
+    html[data-theme="dark"] .progress-bar { background: #333; }
+    html[data-theme="dark"] #ctxMenu { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+    html[data-theme="dark"] #ctxMenu .ctx-header { color: #888; border-bottom-color: #333; }
+    html[data-theme="dark"] #ctxMenu .ctx-item:hover { background: #333; }
+    html[data-theme="dark"] #ctxMenu .ctx-item.current { background: #1e3a5f; }
+    html[data-theme="dark"] #ctxMenu .ctx-item.reset { border-top-color: #333; }
+    html[data-theme="dark"] .creator-sub { color: #777; }
+    html[data-theme="dark"] kbd { background: #333; border-color: #555; color: #e0e0e0; }
+    html[data-theme="dark"] .trash-item { border-bottom-color: #333; }
+    /* 유지: 표시된 아이템 색상 유지 */
+    html[data-theme="dark"] .item.marked { border-color: #d9534f; background: #3a1e1e; }
+    html[data-theme="dark"] .item.marked.selected { background: #3a1e1e !important; }
+  
 </style>
 </head><body>
 <header>
@@ -994,11 +1050,10 @@ HTML_PAGE = """<!DOCTYPE html>
       <button data-v="category">🏷️ 카테고리 편집</button>
     </div>
     <button onclick="undo()" id="undoBtn" title="되돌리기 (Cmd+Z)" disabled>↶</button>
-    <button onclick="rescan()" class="blue">🔄 재스캔</button>
-    <button onclick="openTrash()">🗑️ 휴지통</button>
-    <button onclick="openStats()" title="통계">📊 통계</button>
-    <button onclick="exportOverrides()" title="카테고리 지정 내보내기">📤</button>
-    <button onclick="importOverrides()" title="카테고리 지정 불러오기">📥</button>
+    <button onclick="rescan()" class="blue" title="Mods 폴더 다시 스캔">🔄 재스캔</button>
+    <button onclick="openTrash()" title="삭제된 파일 관리">🗑️ 휴지통</button>
+    <button onclick="openStats()" title="사용량 통계">📊 통계</button>
+    <button onclick="openSettings()" title="설정 (경로·다크모드 등)" style="border-radius:50%; width:32px; padding:0; font-size:15px;">⚙️</button>
     <input type="file" id="importOvFile" accept=".json,application/json" style="display:none;">
     <button onclick="openHelp()" title="사용법 & 단축키" style="border-radius:50%; width:32px; padding:0; font-size:16px;">❓</button>
   </div>
@@ -1070,6 +1125,37 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
   <button onclick="performDelete()" class="primary">🗑️ 휴지통으로 이동</button>
 </div>
+<dialog id="settings-dialog" style="max-width: 560px; width: 90vw;">
+  <button class="dlg-close" onclick="document.getElementById('settings-dialog').close()">✕</button>
+  <h3 style="margin: 0 0 16px;">⚙️ 설정</h3>
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+    <div>
+      <label style="font-weight: 600; font-size: 13px;">🌓 테마</label>
+      <div class="seg" id="themeSeg" style="display:inline-flex; margin-left:8px;">
+        <button data-v="auto" class="on">시스템</button>
+        <button data-v="light">라이트</button>
+        <button data-v="dark">다크</button>
+      </div>
+    </div>
+    <div>
+      <label style="font-weight: 600; font-size: 13px;">📂 Sims 4 경로</label>
+      <div style="font-size: 12px; color: #666; margin-top: 4px;" id="currentPath"></div>
+      <div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
+        <input type="text" id="pathInput" placeholder="예: ~/Documents/Electronic Arts/The Sims 4" style="flex:1; padding: 5px 8px; font-size: 12px;">
+        <button onclick="savePath()" class="blue">저장</button>
+      </div>
+      <div style="font-size: 11px; color: #888; margin-top: 4px;">경로 변경 후 재스캔 필요</div>
+    </div>
+    <div>
+      <label style="font-weight: 600; font-size: 13px;">🏷️ 카테고리 지정 백업</label>
+      <div style="display:flex; gap:6px; margin-top:6px;">
+        <button onclick="exportOverrides()">📤 내보내기</button>
+        <button onclick="importOverrides()">📥 불러오기</button>
+      </div>
+      <div style="font-size: 11px; color: #888; margin-top: 4px;">수동으로 지정한 카테고리 목록 백업/공유</div>
+    </div>
+  </div>
+</dialog>
 <dialog id="marked-dialog" style="max-width:720px; width:90vw;">
   <button class="dlg-close" onclick="document.getElementById('marked-dialog').close()">✕</button>
   <h3>🗑️ 삭제 표시된 아이템 <span id="marked-summary" style="font-weight:normal; color:#666; font-size:13px;"></span></h3>
@@ -1658,6 +1744,62 @@ async function applyToPaths(paths, category) {
 function openHelp() {
   document.getElementById('help-dialog').showModal();
 }
+
+// ─────── 설정 다이얼로그 ───────
+function openSettings() {
+  // 현재 경로 표시
+  fetch('/api/config').then(r => r.json()).then(cfg => {
+    document.getElementById('currentPath').textContent = '현재: ' + (cfg.sims_root || '(미지정)');
+    document.getElementById('pathInput').value = cfg.sims_root || '';
+  }).catch(() => {
+    document.getElementById('currentPath').textContent = '(설정 조회 실패)';
+  });
+  // 현재 테마 하이라이트
+  const theme = localStorage.getItem('theme') || 'auto';
+  document.querySelectorAll('#themeSeg button').forEach(b => {
+    b.classList.toggle('on', b.dataset.v === theme);
+  });
+  document.getElementById('settings-dialog').showModal();
+}
+
+async function savePath() {
+  const path = document.getElementById('pathInput').value.trim();
+  if (!path) { toast('경로를 입력해주세요'); return; }
+  const res = await fetch('/api/config', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({sims_root: path}),
+  });
+  const data = await res.json();
+  if (data.ok) {
+    toast('✅ 저장됨 · 재스캔 실행 중...');
+    await rescan();
+    document.getElementById('settings-dialog').close();
+  } else {
+    toast('❌ ' + (data.error || '저장 실패'));
+  }
+}
+
+// 테마 적용
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+}
+(function initTheme() {
+  const saved = localStorage.getItem('theme') || 'auto';
+  applyTheme(saved);
+})();
+document.addEventListener('DOMContentLoaded', () => {
+  const seg = document.getElementById('themeSeg');
+  if (seg) {
+    seg.querySelectorAll('button').forEach(b => {
+      b.onclick = () => {
+        seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+        applyTheme(b.dataset.v);
+      };
+    });
+  }
+});
 
 async function _copyText(text, label) {
   try { await navigator.clipboard.writeText(text); toast(`📋 복사: ${label}`); }
@@ -2490,6 +2632,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/scan-progress":
             self._json(dict(SCAN_PROGRESS))
             return
+        if path == "/api/config":
+            self._json({"sims_root": str(SIMS_ROOT)})
+            return
         if path == "/api/overrides/export":
             from datetime import datetime
             data = _load_overrides()
@@ -2530,6 +2675,25 @@ class Handler(BaseHTTPRequestHandler):
             self._json(move_to_trash(data.get("paths", [])))
         elif path == "/api/restore":
             self._json(restore_from_trash(data.get("paths", [])))
+        elif path == "/api/config":
+            new_path = data.get("sims_root", "").strip()
+            if not new_path:
+                self._json({"ok": False, "error": "경로가 비어있음"})
+                return
+            expanded = Path(new_path).expanduser().resolve()
+            if not expanded.exists():
+                self._json({"ok": False, "error": f"경로가 존재하지 않음: {expanded}"})
+                return
+            if not (expanded / "Mods").exists():
+                self._json({"ok": False, "error": f"Mods 폴더 없음: {expanded}/Mods"})
+                return
+            _CONFIG_PATH.write_text(json.dumps({"sims_root": str(expanded)}, indent=2))
+            # 전역 경로 업데이트
+            global SIMS_ROOT, MODS, CC_ROOT, TRASH_DIR
+            SIMS_ROOT = expanded
+            MODS = SIMS_ROOT / "Mods"
+            CC_ROOT = MODS / "CC FeaturedCreators"
+            self._json({"ok": True, "sims_root": str(expanded)})
         elif path == "/api/scan":
             # 백그라운드 스레드에서 스캔, 프론트는 /api/scan-progress로 폴링
             if not SCAN_PROGRESS["active"]:
