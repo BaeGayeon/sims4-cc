@@ -1074,7 +1074,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
   <div class="row">
     <div style="position:relative; display:inline-block;">
-      <input type="text" id="search" placeholder="🔍 파일명·창작자 검색 (공백=AND)" style="width: 260px; padding-right: 26px;" autocomplete="off">
+      <input type="text" id="search" placeholder="🔍 검색... (여러 단어 가능)" style="width: 260px; padding-right: 26px;" autocomplete="off">
       <button id="searchClear" type="button" title="지우기" style="position:absolute; right:4px; top:50%; transform:translateY(-50%); width:20px; height:20px; padding:0; border-radius:50%; border:none; background:#ddd; color:#333; cursor:pointer; font-size:11px; display:none; line-height:1;">✕</button>
       <div id="searchHistory" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #ccc; border-radius:6px; margin-top:2px; z-index:200; box-shadow:0 4px 10px rgba(0,0,0,.15);"></div>
     </div>
@@ -1685,8 +1685,9 @@ function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 function escapeAttr(s) { return s.replace(/'/g, "\\\\'"); }
 
 function updateStats(total, visible) {
+  const folderCount = (MANIFEST.folders || MANIFEST.creators || []).length;
   document.getElementById('stats').textContent =
-    `창작자 ${MANIFEST.creators.length}명 · 파일 ${total.toLocaleString()}개 · 표시 중 ${visible.toLocaleString()}개 · 썸네일 ${MANIFEST.total_thumbs.toLocaleString()}개`;
+    `폴더 ${folderCount}개 · 파일 ${total.toLocaleString()}개 · 표시 중 ${visible.toLocaleString()}개 · 썸네일 ${MANIFEST.total_thumbs.toLocaleString()}개`;
 }
 
 function toggle(path) {
@@ -2198,13 +2199,27 @@ async function postBulkAction() {
     arr.unshift(q);
     localStorage.setItem(HIST_KEY, JSON.stringify(arr.slice(0, 5)));
   };
+  const removeHistItem = (q) => {
+    const arr = loadHist().filter(x => x !== q);
+    localStorage.setItem(HIST_KEY, JSON.stringify(arr));
+    showHist();
+  };
+  const clearAllHist = () => {
+    localStorage.setItem(HIST_KEY, '[]');
+    hist.style.display = 'none';
+  };
+  window._ccmRemoveHist = removeHistItem;
+  window._ccmClearHist = clearAllHist;
   const showHist = () => {
     const arr = loadHist();
     if (!arr.length || s.value) { hist.style.display = 'none'; return; }
-    hist.innerHTML = arr.map(q => `<div class="hist-item" data-q="${escapeHtml(q)}" style="padding:6px 10px; cursor:pointer; font-size:12px;">🕒 ${escapeHtml(q)}</div>`).join('');
+    let html = '<div style="padding:6px 10px; font-size:11px; color:#888; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee;"><span>🕒 최근 검색</span><span onmousedown="event.preventDefault(); window._ccmClearHist()" style="cursor:pointer; color:#999; font-size:11px;">전체 지우기</span></div>';
+    html += arr.map(q => `<div class="hist-item" data-q="${escapeHtml(q)}" style="padding:6px 10px; cursor:pointer; font-size:12px; display:flex; justify-content:space-between; align-items:center;"><span>${escapeHtml(q)}</span><span onmousedown="event.preventDefault(); event.stopPropagation(); window._ccmRemoveHist('${escapeAttr(q)}')" style="opacity:.5; cursor:pointer; padding:0 4px;">✕</span></div>`).join('');
+    hist.innerHTML = html;
     hist.style.display = 'block';
     hist.querySelectorAll('.hist-item').forEach(el => {
       el.onmousedown = (ev) => {
+        if (ev.target.tagName === 'SPAN' && ev.target.textContent === '✕') return;
         ev.preventDefault();
         s.value = el.dataset.q;
         currentFilter = s.value.toLowerCase();
