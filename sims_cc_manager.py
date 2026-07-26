@@ -812,7 +812,8 @@ HTML_PAGE = """<!DOCTYPE html>
     --radius-sm: 6px;
     --radius-md: 8px;
     --radius-lg: 10px;
-    --h-input: 32px;
+    --h-input: 30px;
+    --h-thumb: 130px;
     --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
     --shadow-md: 0 4px 12px rgba(0,0,0,.08);
     --shadow-lg: 0 8px 24px rgba(0,0,0,.12);
@@ -821,26 +822,30 @@ HTML_PAGE = """<!DOCTYPE html>
   body, button, input, select, textarea, optgroup, option, kbd { font-family: 'SUITE Variable', 'SUITE', -apple-system, BlinkMacSystemFont, sans-serif; }
   input::placeholder { font-family: inherit; color: var(--c-text-subtle); }
   body { margin: 0; background: var(--c-bg); color: var(--c-text); font-size: 13px; }
-  header { position: sticky; top: 0; background: var(--c-surface); border-bottom: 1px solid var(--c-border); padding: 10px 16px; z-index: 100; box-shadow: var(--shadow-sm); }
-  .title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .title-row h1 { margin: 0; font-size: 16px; flex-shrink: 0; white-space: nowrap; }
-  .stats { color: #666; font-size: 12px; flex: 1 1 200px; min-width: 0; word-break: keep-all; }
-  /* 반응형: 좁으면 헤더 요소 wrap, stats 는 자기 줄 차지 */
+  header { position: sticky; top: 0; background: var(--c-surface); border-bottom: 1px solid var(--c-border); padding: 6px 16px; z-index: 100; box-shadow: var(--shadow-sm); }
+  .title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 2px 0; }
+  .title-row h1 { margin: 0; font-size: 15px; flex-shrink: 0; white-space: nowrap; }
+  .stats { color: var(--c-text-muted); font-size: 11px; flex: 1 1 auto; min-width: 0; word-break: keep-all; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* 반응형: 좁을수록 접기 */
+  @media (max-width: 1200px) {
+    .stats { flex-basis: 100%; order: 10; padding: 2px 0 0; }
+  }
   @media (max-width: 900px) {
-    .stats { flex-basis: 100%; order: 10; }
-    .title-row { gap: 6px; }
-    #modeSeg button { padding: 4px 8px !important; font-size: 11px !important; }
+    #modeSeg button { padding: 0 10px !important; font-size: 11px !important; }
+    .group .label { display: none; }
+    button { padding: 0 10px; font-size: 11px; }
   }
   @media (max-width: 640px) {
-    header { padding: 8px 10px; }
+    header { padding: 6px 10px; }
     .row { padding: 4px 0; }
-    input[type=search], #search { width: 100% !important; }
-    .group .label { display: none; }
+    #search { width: 100% !important; }
     #footer { flex-wrap: wrap; height: auto; padding: 6px 10px; }
     #bulkBar { flex-wrap: wrap; padding: 6px 10px; }
+    /* 아이콘 전용 버튼 (휴지통, 통계) - 좁으면 텍스트 숨김 */
+    .hide-narrow { display: none; }
   }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 8px 0; border-top: 1px solid var(--c-border); }
-  .row:first-of-type { border-top: none; padding-top: 4px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 5px 0; border-top: 1px solid var(--c-border); }
+  .row:first-of-type { border-top: none; padding-top: 3px; }
   .group { display: inline-flex; align-items: center; gap: 6px; background: var(--c-bg); padding: 4px 10px; border-radius: var(--radius-sm); height: var(--h-input); }
   .group .label { color: var(--c-text-muted); font-size: 11px; margin: 0; }
   .divider { width: 1px; height: 20px; background: var(--c-border); margin: 0 4px; }
@@ -920,7 +925,7 @@ HTML_PAGE = """<!DOCTYPE html>
   .creator-count { color: var(--c-text-muted); font-size: 12px; }
   .creator-actions { display: flex; gap: 6px; }
   .creator-actions button { height: 26px !important; padding: 0 10px !important; font-size: 11px !important; }
-  .grid { padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; align-items: start; }
+  .grid { padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--h-thumb), 1fr)); gap: 6px; align-items: start; }
   .item { position: relative; border: 2px solid transparent; border-radius: 4px; cursor: pointer; background: #f9f9f9; overflow: visible; content-visibility: auto; contain-intrinsic-size: 200px 180px; }
   .item .thumb-img, .item .no-thumb { border-radius: 2px 2px 0 0; overflow: hidden; }
   .item:hover { border-color: #4a90e2; z-index: 10; }
@@ -1158,6 +1163,10 @@ HTML_PAGE = """<!DOCTYPE html>
         <option value="recent">최근순</option>
         <option value="oldest">오래된순</option>
       </select>
+    </div>
+    <div class="group">
+      <span class="label">크기</span>
+      <input type="range" id="zoomSlider" min="80" max="240" value="130" style="width: 90px; height: 20px;">
     </div>
   </div>
 
@@ -2304,6 +2313,17 @@ document.getElementById('itemSortBy').addEventListener('change', e => {
   itemSortBy = e.target.value;
   render();
 });
+// 아이템 크기 슬라이더
+(function initZoom() {
+  const slider = document.getElementById('zoomSlider');
+  const saved = localStorage.getItem('ccm_zoom');
+  if (saved) { slider.value = saved; document.documentElement.style.setProperty('--h-thumb', saved + 'px'); }
+  slider.addEventListener('input', e => {
+    const v = e.target.value;
+    document.documentElement.style.setProperty('--h-thumb', v + 'px');
+    localStorage.setItem('ccm_zoom', v);
+  });
+})();
 document.getElementById('groupSeg').querySelectorAll('button').forEach(b => {
   b.onclick = () => {
     groupBy = b.dataset.v;
