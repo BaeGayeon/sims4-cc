@@ -888,8 +888,9 @@ HTML_PAGE = """<!DOCTYPE html>
   button.blue:hover { background: var(--c-blue-hover); border-color: var(--c-blue-hover); }
   button.icon-only { width: var(--h-input); padding: 0; justify-content: center; font-size: 15px; border-radius: 50%; }
   /* 오버플로우 (⋯) 메뉴 */
-  .menu-wrap { position: relative; display: inline-block; }
-  .overflow-menu { display: none; position: absolute; top: calc(100% + 4px); right: 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); padding: 4px; z-index: 300; min-width: 160px; }
+  .menu-wrap { display: inline-block; }
+  /* position:fixed + JS 계산 좌표 사용 (flex-wrap 환경에서도 항상 정확) */
+  .overflow-menu { display: none; position: fixed; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); padding: 4px; z-index: 300; width: 170px; }
   .overflow-menu.open { display: block; }
   .overflow-menu button { display: flex; width: 100%; justify-content: flex-start; border: none; background: transparent; padding: 8px 12px; border-radius: 4px; text-align: left; height: auto; }
   .overflow-menu button:hover { background: var(--c-bg); }
@@ -1842,13 +1843,28 @@ function openHelp() {
 }
 
 // ─────── 오버플로우 메뉴 ───────
+// CSS position:absolute + right:0 은 header가 flex-wrap 되는 좁은 화면에서
+// containing block 계산이 꼬여 엉뚱한 위치에 뜨는 버그가 있었음.
+// → 버튼의 실제 화면 좌표(getBoundingClientRect)를 기준으로 JS가 직접
+//   position:fixed 좌표를 계산해서 항상 버튼 바로 아래에 뜨도록 함.
 function toggleOverflowMenu(e) {
   e.stopPropagation();
-  document.getElementById('overflowMenu').classList.toggle('open');
+  const menu = document.getElementById('overflowMenu');
+  const isOpen = menu.classList.contains('open');
+  if (isOpen) { closeOverflow(); return; }
+  const btn = e.currentTarget || e.target.closest('button');
+  const r = btn.getBoundingClientRect();
+  const menuWidth = 170;
+  let left = r.right - menuWidth;   // 버튼 오른쪽 끝에 메뉴 오른쪽 맞춤
+  left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));  // 화면 밖으로 안 나가게
+  menu.style.left = left + 'px';
+  menu.style.top = (r.bottom + 4) + 'px';
+  menu.classList.add('open');
 }
 function closeOverflow() {
   document.getElementById('overflowMenu').classList.remove('open');
 }
+window.addEventListener('resize', closeOverflow);
 document.addEventListener('click', (e) => {
   const m = document.getElementById('overflowMenu');
   if (m && !m.contains(e.target) && !e.target.closest('.menu-wrap button')) closeOverflow();
