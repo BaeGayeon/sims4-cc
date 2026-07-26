@@ -1019,6 +1019,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .footer-sub { font-size: 11px; color: var(--c-text-label); }
   .footer-sub b { font-weight: 600; }
   .footer-sub .red { color: var(--c-red); }
+  /* 라벨+셀렉트+버튼을 한 덩어리로 묶어서 줄바꿈 시에도 서로 떨어지지 않게 함 */
+  .footer-cat-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   #footer select { height: 34px; flex-shrink: 0; }
   #footer button.blue, #footer button.danger-outline { height: 34px; padding: 0 16px; font-weight: 600; font-size: 12.5px; flex-shrink: 0; }
   #footer .divider { flex-shrink: 0; }
@@ -1243,9 +1245,11 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
   <button class="pill-btn" onclick="clearBulkSel()" title="다중선택 전체 해제">선택 해제</button>
   <div style="flex:1;"></div>
-  <span class="label">선택 항목을</span>
-  <select id="bulkCat"><option value="">카테고리 선택…</option></select>
-  <button class="blue" onclick="applyBulkCategory()" id="applyCatBtn" disabled>카테고리 지정</button>
+  <div class="footer-cat-group">
+    <span class="label">선택 항목을</span>
+    <select id="bulkCat"><option value="">카테고리 선택…</option></select>
+    <button class="blue" onclick="applyBulkCategory()" id="applyCatBtn" disabled>카테고리 지정</button>
+  </div>
   <div class="divider"></div>
   <button class="danger-outline" onclick="performDelete()" id="toTrashBtn" disabled>휴지통으로 이동</button>
 </div>
@@ -1668,6 +1672,10 @@ function render() {
     const slashIdx = c.name.lastIndexOf('/');
     const crumbParent = slashIdx > -1 ? c.name.slice(0, slashIdx) : '';
     const crumbLeaf = slashIdx > -1 ? c.name.slice(slashIdx + 1) : c.name;
+    // 선택/삭제표시 가능한 항목 기준으로 "이미 전체 적용됐는지" 판단 → 버튼이 선택·해제를 토글
+    const selectable = items.filter(it => !it.trashed && !it.perma_deleted);
+    const allSelected = selectable.length > 0 && selectable.every(it => bulkSel.has(it.path));
+    const allMarked = selectable.length > 0 && selectable.every(it => state[it.path]);
     section.innerHTML = `
       <div class="creator-header" onclick="if(!event.target.closest('button'))this.parentElement.classList.toggle('collapsed')">
         ${crumbParent ? `<span class="crumb-parent">${escapeHtml(crumbParent)} /</span>` : ''}
@@ -1675,23 +1683,23 @@ function render() {
         <span class="creator-count">${items.length}개 · ${human(c._stats.size)}</span>
         ${markedInCreator ? `<span class="creator-marked-badge">삭제 표시 ${markedInCreator}</span>` : ''}
         <div class="creator-actions">
-          <button class="folder-select-btn" title="이 폴더의 모든 아이템을 다중선택에 추가">폴더 전체 선택</button>
-          <button class="folder-mark-btn danger-hover" title="이 폴더 전체를 삭제 대상으로 표시">전체 삭제표시</button>
+          <button class="folder-select-btn" title="${allSelected ? '이 폴더의 다중선택을 모두 해제' : '이 폴더의 모든 아이템을 다중선택에 추가'}">${allSelected ? '폴더 선택 해제' : '폴더 전체 선택'}</button>
+          <button class="folder-mark-btn danger-hover" title="${allMarked ? '이 폴더 전체의 삭제 표시를 해제' : '이 폴더 전체를 삭제 대상으로 표시'}">${allMarked ? '표시 해제' : '전체 삭제표시'}</button>
         </div>
       </div>
       <div class="grid"></div>
     `;
     section.querySelector('.folder-select-btn').onclick = () => {
-      let added = 0;
-      for (const it of items) {
-        if (it.trashed || it.perma_deleted) continue;
-        if (!bulkSel.has(it.path)) { bulkSel.add(it.path); added++; }
+      let changed = 0;
+      for (const it of selectable) {
+        if (allSelected) { if (bulkSel.delete(it.path)) changed++; }
+        else if (!bulkSel.has(it.path)) { bulkSel.add(it.path); changed++; }
       }
       updateBulkBar();
       render();
-      if (added) toast(`✅ ${added}개 다중선택에 추가됨`);
+      if (changed) toast(allSelected ? `✅ ${changed}개 다중선택 해제됨` : `✅ ${changed}개 다중선택에 추가됨`);
     };
-    section.querySelector('.folder-mark-btn').onclick = () => markCreator(c.name, true);
+    section.querySelector('.folder-mark-btn').onclick = () => markCreator(c.name, !allMarked);
     const grid = section.querySelector('.grid');
     for (const it of items) {
       const div = document.createElement('div');
