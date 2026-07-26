@@ -799,9 +799,23 @@ HTML_PAGE = """<!DOCTYPE html>
   input::placeholder { font-family: inherit; }
   body { margin: 0; background: #f5f5f5; color: #222; }
   header { position: sticky; top: 0; background: white; border-bottom: 1px solid #ddd; padding: 8px 16px; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,.05); }
-  .title-row { display: flex; align-items: center; gap: 12px; }
-  .title-row h1 { margin: 0; font-size: 16px; flex-shrink: 0; }
-  .stats { color: #666; font-size: 12px; flex: 1; }
+  .title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .title-row h1 { margin: 0; font-size: 16px; flex-shrink: 0; white-space: nowrap; }
+  .stats { color: #666; font-size: 12px; flex: 1 1 200px; min-width: 0; word-break: keep-all; }
+  /* 반응형: 좁으면 헤더 요소 wrap, stats 는 자기 줄 차지 */
+  @media (max-width: 900px) {
+    .stats { flex-basis: 100%; order: 10; }
+    .title-row { gap: 6px; }
+    #modeSeg button { padding: 4px 8px !important; font-size: 11px !important; }
+  }
+  @media (max-width: 640px) {
+    header { padding: 8px 10px; }
+    .row { padding: 4px 0; }
+    input[type=search], #search { width: 100% !important; }
+    .group .label { display: none; }
+    #footer { flex-wrap: wrap; height: auto; padding: 6px 10px; }
+    #bulkBar { flex-wrap: wrap; padding: 6px 10px; }
+  }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 6px 0; border-top: 1px solid #f0f0f0; }
   .row:first-of-type { border-top: none; padding-top: 0; }
   .group { display: inline-flex; align-items: center; gap: 4px; background: #f7f7f7; padding: 3px 8px; border-radius: 6px; }
