@@ -826,6 +826,14 @@ HTML_PAGE = """<!DOCTYPE html>
   .title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 2px 0; }
   .title-row h1 { margin: 0; font-size: 15px; flex-shrink: 0; white-space: nowrap; }
   .stats { color: var(--c-text-muted); font-size: 11px; flex: 1 1 auto; min-width: 0; word-break: keep-all; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* 모드 선택 줄: 살짝 강조해서 독립된 섹션임을 표시 */
+  .mode-row { align-items: center; }
+  .mode-row .label { font-weight: 600; }
+  /* 접기 대상 영역 */
+  .collapsible-body { }
+  body.header-collapsed .collapsible-body { display: none; }
+  body.header-collapsed #collapseBtn { transform: rotate(180deg); }
+  #collapseBtn { transition: transform .15s; }
   /* 반응형: 좁을수록 접기 */
   @media (max-width: 1200px) {
     .stats { flex-basis: 100%; order: 10; padding: 2px 0 0; }
@@ -841,10 +849,7 @@ HTML_PAGE = """<!DOCTYPE html>
     #search { width: 100% !important; }
     #footer { flex-wrap: wrap; height: auto; padding: 6px 10px; }
     #bulkBar { flex-wrap: wrap; padding: 6px 10px; }
-    .hide-narrow { display: none; }
-    .show-narrow-only { display: flex !important; }
   }
-  .show-narrow-only { display: none; }
   .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 5px 0; border-top: 1px solid var(--c-border); }
   .row:first-of-type { border-top: none; padding-top: 3px; }
   .group { display: inline-flex; align-items: center; gap: 6px; background: var(--c-bg); padding: 4px 10px; border-radius: var(--radius-sm); height: var(--h-input); }
@@ -924,7 +929,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .chip:hover { background: var(--c-bg); border-color: var(--c-text-muted); }
   .chip.on { background: var(--c-blue); color: white; border-color: var(--c-blue-hover); }
   .chip .count { opacity: .7; font-size: 11px; }
-  .subchips { padding-left: 16px; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #e0e0e0; }
+  .subchips { padding-left: 16px; }
+  #subRow { padding-top: 0 !important; }
   .subchip { padding: 3px 8px; border-radius: 12px; background: #f4f4f4; border: 1px solid #e0e0e0; cursor: pointer; font-size: 11px; }
   .subchip:hover { background: #e8e8e8; }
   .subchip.on { background: #333; color: white; border-color: #333; }
@@ -1009,6 +1015,11 @@ HTML_PAGE = """<!DOCTYPE html>
   .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px; }
   .badge.warn { background: #fff3cd; color: #856404; }
   .progress { background: #f0f0f0; padding: 20px; border-radius: 8px; margin: 40px auto; max-width: 500px; text-align: center; }
+  /* 빈 상태: 배경 박스 없이 심플하게 */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--c-text-muted); }
+  .empty-state-icon { font-size: 32px; opacity: .5; margin-bottom: 10px; }
+  .empty-state-title { font-size: 14px; font-weight: 600; color: var(--c-text); margin-bottom: 4px; }
+  .empty-state-desc { font-size: 12px; margin-bottom: 14px; }
   .progress-bar { height: 8px; background: #ddd; border-radius: 4px; overflow: hidden; margin-top: 12px; }
   .progress-bar > div { height: 100%; background: #4a90e2; transition: width .3s; }
   dialog { border: none; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.2); padding: 20px; max-width: 500px; }
@@ -1125,31 +1136,35 @@ HTML_PAGE = """<!DOCTYPE html>
 </style>
 </head><body>
 <header>
+  <!-- 브랜드 바: 로고 + 상시 액션들. 모드 토글은 별도 줄로 분리 (로고 옆 붙어있으면 안 어울림) -->
   <div class="title-row">
     <h1>🎮 CC Manager</h1>
+    <div class="stats" id="stats">로딩 중...</div>
+    <button onclick="undo()" id="undoBtn" title="되돌리기 (Cmd+Z)" class="icon-only" disabled>↶</button>
+    <button onclick="rescan()" class="blue" title="Mods 폴더 다시 스캔">🔄 재스캔</button>
+    <button onclick="openTrash()" title="휴지통">🗑️ 휴지통</button>
+    <button onclick="openStats()" title="통계">📊 통계</button>
+    <div class="menu-wrap">
+      <button onclick="toggleOverflowMenu(event)" class="icon-only" title="더보기">⋯</button>
+      <div id="overflowMenu" class="overflow-menu">
+        <button onclick="openSettings(); closeOverflow();">⚙️ 설정</button>
+        <button onclick="openHelp(); closeOverflow();">❓ 도움말</button>
+      </div>
+    </div>
+    <button onclick="toggleHeaderCollapse()" id="collapseBtn" class="icon-only" title="헤더 접기/펼치기">▲</button>
+    <input type="file" id="importOvFile" accept=".json,application/json" style="display:none;">
+  </div>
+
+  <!-- 모드 선택: 별도 줄로, 전체 너비 강조 -->
+  <div class="row mode-row">
+    <span class="label">모드</span>
     <div class="seg" id="modeSeg" title="선택 모드">
       <button data-v="delete" class="on">🗑️ 삭제 선택</button>
       <button data-v="category">🏷️ 카테고리 편집</button>
     </div>
-    <div style="flex:1;"></div>
-    <button onclick="undo()" id="undoBtn" title="되돌리기 (Cmd+Z)" class="icon-only" disabled>↶</button>
-    <button onclick="rescan()" class="blue" title="Mods 폴더 다시 스캔">🔄 재스캔</button>
-    <button onclick="openTrash()" title="휴지통">🗑️ 휴지통</button>
-    <button onclick="openStats()" title="통계" class="hide-narrow">📊 통계</button>
-    <div class="menu-wrap">
-      <button onclick="toggleOverflowMenu(event)" class="icon-only" title="더보기">⋯</button>
-      <div id="overflowMenu" class="overflow-menu">
-        <button onclick="openStats(); closeOverflow();" class="show-narrow-only">📊 통계</button>
-        <button onclick="openSettings(); closeOverflow();">⚙️ 설정</button>
-        <button onclick="openHelp(); closeOverflow();">❓ 도움말</button>
-        <hr>
-        <button onclick="toggleHeaderCollapse(); closeOverflow();" id="collapseBtn">▲ 헤더 접기</button>
-      </div>
-    </div>
-    <input type="file" id="importOvFile" accept=".json,application/json" style="display:none;">
   </div>
-  <div class="stats" id="stats" style="padding: 2px 0; color: var(--c-text-muted); font-size: 11px;">로딩 중...</div>
 
+  <div class="collapsible-body">
   <div class="row">
     <div style="position:relative; display:inline-block;">
       <input type="text" id="search" placeholder="🔍 검색... (여러 단어 가능)" style="width: 260px; padding-right: 32px;" autocomplete="off">
@@ -1212,6 +1227,7 @@ HTML_PAGE = """<!DOCTYPE html>
   <div class="row" id="subRow" style="display:none;">
     <div class="chips subchips" id="subChips"></div>
   </div>
+  </div><!-- /collapsible-body -->
 </header>
 <main id="main"><div class="progress">로딩 중...</div></main>
 <div id="footer">
@@ -1735,11 +1751,10 @@ function render() {
   }
   if (totalItems > 0 && visibleItems === 0) {
     const empty = document.createElement('div');
-    empty.className = 'progress';
-    empty.style.cssText = 'padding:40px;';
-    empty.innerHTML = `<div style="font-size:36px;margin-bottom:8px;">🔍</div>
-      <h3 style="margin:0 0 6px 0;">일치하는 아이템 없음</h3>
-      <div style="color:#666;margin-bottom:16px;">현재 필터 조건에 맞는 항목이 없어요.</div>
+    empty.className = 'empty-state';
+    empty.innerHTML = `<div class="empty-state-icon">🔍</div>
+      <div class="empty-state-title">일치하는 아이템 없음</div>
+      <div class="empty-state-desc">현재 필터 조건에 맞는 항목이 없어요.</div>
       <button class="blue" onclick="resetFilters()">필터 초기화</button>`;
     main.appendChild(empty);
   }
@@ -1870,20 +1885,15 @@ document.addEventListener('click', (e) => {
   if (m && !m.contains(e.target) && !e.target.closest('.menu-wrap button')) closeOverflow();
 });
 
-// ─────── 헤더 접기 ───────
+// ─────── 헤더 접기 (검색/필터/카테고리 영역만 접힘, 로고·모드·액션 버튼은 항상 유지) ───────
 function toggleHeaderCollapse() {
   const collapsed = document.body.classList.toggle('header-collapsed');
   localStorage.setItem('ccm_header_collapsed', collapsed ? '1' : '0');
-  const btn = document.getElementById('collapseBtn');
-  if (btn) btn.textContent = collapsed ? '▼ 헤더 펼치기' : '▲ 헤더 접기';
+  document.getElementById('collapseBtn').title = collapsed ? '헤더 펼치기' : '헤더 접기';
 }
 (function initHeaderCollapse() {
   if (localStorage.getItem('ccm_header_collapsed') === '1') {
     document.body.classList.add('header-collapsed');
-    document.addEventListener('DOMContentLoaded', () => {
-      const btn = document.getElementById('collapseBtn');
-      if (btn) btn.textContent = '▼ 헤더 펼치기';
-    });
   }
 })();
 
