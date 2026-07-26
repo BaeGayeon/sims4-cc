@@ -19,11 +19,68 @@ from pathlib import Path
 from urllib.parse import urlparse, unquote
 
 # ─────────── 경로 설정 ───────────
-SIMS_ROOT = Path("/Users/bae/Games/Electronic Arts/The Sims 4")
-MODS = SIMS_ROOT / "Mods"
-CC_ROOT = MODS / "CC FeaturedCreators"
 # 앱 관련 모든 데이터를 Sims 폴더 밖(macOS 표준 위치)에 저장
 APP_STATE = Path.home() / "Library" / "Application Support" / "Sims4CCManager"
+_CONFIG_PATH = APP_STATE / "config.json"
+
+
+def find_sims_root():
+    """Sims 4 폴더 자동 감지. 캐시 → 환경변수 → 표준 경로 → 심볼릭 링크 순."""
+    # 캐시된 경로
+    try:
+        if _CONFIG_PATH.exists():
+            cfg = json.loads(_CONFIG_PATH.read_text())
+            p = Path(cfg.get("sims_root", ""))
+            if p.exists() and (p / "Mods").exists():
+                return p
+    except Exception:
+        pass
+    candidates = []
+    env = os.environ.get("SIMS4_PATH")
+    if env:
+        candidates.append(Path(env))
+    home = Path.home()
+    candidates.append(home / "Documents" / "Electronic Arts" / "The Sims 4")
+    candidates.append(home / "Games" / "Electronic Arts" / "The Sims 4")
+    # 심볼릭 링크 따라가기
+    ea = home / "Documents" / "Electronic Arts"
+    if ea.exists():
+        try:
+            for child in ea.iterdir():
+                if child.name == "The Sims 4" or child.name.startswith("The Sims 4"):
+                    try:
+                        candidates.append(child.resolve())
+                    except Exception:
+                        candidates.append(child)
+        except Exception:
+            pass
+    for p in candidates:
+        try:
+            if p and p.exists() and (p / "Mods").exists():
+                # 캐시 저장
+                try:
+                    APP_STATE.mkdir(parents=True, exist_ok=True)
+                    _CONFIG_PATH.write_text(json.dumps({"sims_root": str(p)}, indent=2))
+                except Exception:
+                    pass
+                return p
+        except Exception:
+            continue
+    print("\n" + "=" * 60)
+    print("  Sims 4 폴더를 찾을 수 없습니다.")
+    print("=" * 60)
+    print("  다음 중 하나를 시도해 주세요:")
+    print("   1) 환경변수로 지정:  export SIMS4_PATH=\"/경로/The Sims 4\"")
+    print("   2) 표준 위치에 설치: ~/Documents/Electronic Arts/The Sims 4")
+    print("   3) 설정 파일 편집:   " + str(_CONFIG_PATH))
+    print("      예: {\"sims_root\": \"/경로/The Sims 4\"}")
+    print("=" * 60 + "\n")
+    raise SystemExit(1)
+
+
+SIMS_ROOT = find_sims_root()
+MODS = SIMS_ROOT / "Mods"
+CC_ROOT = MODS / "CC FeaturedCreators"
 THUMBS_DIR = APP_STATE / "thumbs"
 MANIFEST_PATH = APP_STATE / "manifest.json"
 TRASH_DIR = APP_STATE / "trash"
