@@ -794,7 +794,10 @@ HTML_PAGE = """<!DOCTYPE html>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/static/woff2/SUITE.css">
 <style>
   * { box-sizing: border-box; }
-  body { font-family: 'SUITE Variable', 'SUITE', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #f5f5f5; color: #222; }
+  /* SUITE 폰트를 모든 요소에 적용 (button/input/select 포함) */
+  body, button, input, select, textarea, optgroup, option, kbd { font-family: 'SUITE Variable', 'SUITE', -apple-system, BlinkMacSystemFont, sans-serif; }
+  input::placeholder { font-family: inherit; }
+  body { margin: 0; background: #f5f5f5; color: #222; }
   header { position: sticky; top: 0; background: white; border-bottom: 1px solid #ddd; padding: 8px 16px; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,.05); }
   .title-row { display: flex; align-items: center; gap: 12px; }
   .title-row h1 { margin: 0; font-size: 16px; flex-shrink: 0; }
