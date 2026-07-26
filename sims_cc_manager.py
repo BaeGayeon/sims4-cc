@@ -539,6 +539,52 @@ def _save_overrides(m):
     OVERRIDES_PATH.write_text(json.dumps(m, ensure_ascii=False, indent=2))
 
 
+def _compute_stats():
+    m = load_manifest() or {"folders": [], "creators": []}
+    folders = m.get("folders") or m.get("creators") or []
+    trash_manifest = _load_trash_manifest()
+    total_files = 0; total_size = 0
+    creators = {}   # name -> {size, count}
+    cats = {}       # cat -> {count, size}
+    newest = 0; oldest = float("inf")
+    for f in folders:
+        for it in f.get("items", []):
+            if it.get("trashed") or it.get("perma_deleted"): continue
+            total_files += 1
+            sz = it.get("size", 0); total_size += sz
+            cname = f.get("name", "?")
+            c = creators.setdefault(cname, {"size": 0, "count": 0})
+            c["size"] += sz; c["count"] += 1
+            for cat in (it.get("cats") or [it.get("primary_cat") or "기타"]):
+                cc = cats.setdefault(cat, {"count": 0, "size": 0})
+                cc["count"] += 1; cc["size"] += sz
+            mt = it.get("mtime", 0)
+            if mt: newest = max(newest, mt); oldest = min(oldest, mt)
+    trash_items = list(trash_manifest.values()) if isinstance(trash_manifest, dict) else []
+    trash_count = sum(1 for x in trash_items if not x.get("perma_deleted"))
+    trash_size = sum(x.get("size", 0) for x in trash_items if not x.get("perma_deleted"))
+    top_creators = sorted(
+        ({"name": n, "size": v["size"], "count": v["count"]} for n, v in creators.items()),
+        key=lambda x: -x["size"]
+    )[:10]
+    cat_breakdown = sorted(
+        ({"name": n, "count": v["count"], "size": v["size"]} for n, v in cats.items()),
+        key=lambda x: -x["count"]
+    )
+    return {
+        "total_files": total_files,
+        "total_size": total_size,
+        "creator_count": len(creators),
+        "top_creators": top_creators,
+        "categories": cat_breakdown,
+        "trash_count": trash_count,
+        "trash_size": trash_size,
+        "overrides_count": len(_load_overrides()),
+        "newest_mtime": newest,
+        "oldest_mtime": oldest if oldest != float("inf") else 0,
+    }
+
+
 def set_category_override(rel_path, category):
     """수동으로 카테고리 지정 (또는 해제)"""
     overrides = _load_overrides()
@@ -943,6 +989,10 @@ HTML_PAGE = """<!DOCTYPE html>
     <button onclick="undo()" id="undoBtn" title="되돌리기 (Cmd+Z)" disabled>↶</button>
     <button onclick="rescan()" class="blue">🔄 재스캔</button>
     <button onclick="openTrash()">🗑️ 휴지통</button>
+    <button onclick="openStats()" title="통계">📊 통계</button>
+    <button onclick="exportOverrides()" title="카테고리 지정 내보내기">📤</button>
+    <button onclick="importOverrides()" title="카테고리 지정 불러오기">📥</button>
+    <input type="file" id="importOvFile" accept=".json,application/json" style="display:none;">
     <button onclick="openHelp()" title="사용법 & 단축키" style="border-radius:50%; width:32px; padding:0; font-size:16px;">❓</button>
   </div>
 
@@ -2237,6 +2287,71 @@ performDelete = async function() {
   }
 };
 
+// ─────── 통계 & 오버라이드 import/export ───────
+function exportOverrides() {
+  window.location = '/api/overrides/export';
+}
+function importOverrides() {
+  const inp = document.getElementById('importOvFile');
+  inp.onchange = async () => {
+    const f = inp.files && inp.files[0];
+    if (!f) return;
+    try {
+      const text = await f.text();
+      const parsed = JSON.parse(text);
+      const payload = parsed.overrides ? parsed : {overrides: parsed};
+      const res = await fetch('/api/overrides/import', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      toast(`📥 ${data.imported}개 추가/변경됨 (총 ${data.total}개)`);
+      await loadManifest();
+    } catch (e) {
+      toast('❌ 파일 형식 오류');
+    }
+    inp.value = '';
+  };
+  inp.click();
+}
+
+async function openStats() {
+  const res = await fetch('/api/stats');
+  const s = await res.json();
+  let dlg = document.getElementById('stats-dialog');
+  if (!dlg) {
+    dlg = document.createElement('dialog');
+    dlg.id = 'stats-dialog';
+    dlg.style.cssText = 'max-width:640px;width:90vw;';
+    document.body.appendChild(dlg);
+  }
+  const maxSz = Math.max(1, ...(s.top_creators || []).map(c => c.size));
+  const fmtDate = t => t ? new Date(t * 1000).toLocaleDateString('ko-KR') : '-';
+  dlg.innerHTML = `
+    <button class="dlg-close" onclick="this.parentElement.close()">✕</button>
+    <h2 style="margin:0 0 12px 0;">📊 통계</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">전체 파일</div><div style="font-size:20px;font-weight:600;">${s.total_files.toLocaleString()}</div></div>
+      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">전체 용량</div><div style="font-size:20px;font-weight:600;">${human(s.total_size)}</div></div>
+      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">폴더/창작자</div><div style="font-size:20px;font-weight:600;">${s.creator_count}</div></div>
+      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">수동 카테고리</div><div style="font-size:20px;font-weight:600;">${s.overrides_count}</div></div>
+      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">휴지통</div><div style="font-size:14px;">${s.trash_count}개 · ${human(s.trash_size)}</div></div>
+      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">최신 / 최고령</div><div style="font-size:12px;">${fmtDate(s.newest_mtime)}<br>${fmtDate(s.oldest_mtime)}</div></div>
+    </div>
+    <h3 style="margin:8px 0;font-size:14px;">🏆 창작자 Top 10 (용량 기준)</h3>
+    <div style="margin-bottom:16px;">
+      ${(s.top_creators || []).map(c => `
+        <div style="margin:4px 0;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span>${escapeHtml(c.name)}</span><span style="color:#666;">${c.count}개 · ${human(c.size)}</span></div>
+          <div style="height:6px;background:#eee;border-radius:3px;overflow:hidden;"><div style="height:100%;background:#4a90e2;width:${(c.size/maxSz*100).toFixed(1)}%;"></div></div>
+        </div>`).join('')}
+    </div>
+    <h3 style="margin:8px 0;font-size:14px;">🏷️ 카테고리 분포</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      ${(s.categories || []).map(c => `<span style="padding:4px 8px;background:#f0f0f0;border-radius:12px;font-size:12px;">${escapeHtml(c.name)} <b>${c.count}</b> <span style="color:#888;">(${human(c.size)})</span></span>`).join('')}
+    </div>`;
+  dlg.showModal();
+}
+
 // ─────── 키보드 네비게이션 ───────
 (function initKbNav(){
   let focusIdx = -1;
@@ -2367,6 +2482,21 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/scan-progress":
             self._json(dict(SCAN_PROGRESS))
             return
+        if path == "/api/overrides/export":
+            from datetime import datetime
+            data = _load_overrides()
+            body = json.dumps({"exported_at": datetime.now().isoformat(), "count": len(data), "overrides": data}, ensure_ascii=False, indent=2).encode()
+            fn = f"overrides-{datetime.now().strftime('%Y%m%d')}.json"
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Disposition", f'attachment; filename="{fn}"')
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        if path == "/api/stats":
+            self._json(_compute_stats())
+            return
         if path.startswith("/thumbs/"):
             name = path[len("/thumbs/"):]
             fp = THUMBS_DIR / name
@@ -2403,6 +2533,16 @@ class Handler(BaseHTTPRequestHandler):
             self._json(empty_trash())
         elif path == "/api/delete-from-trash":
             self._json(delete_from_trash(data.get("paths", [])))
+        elif path == "/api/overrides/import":
+            merged = _load_overrides()
+            incoming = data.get("overrides") if isinstance(data.get("overrides"), dict) else (data if all(isinstance(v, str) for v in data.values()) else {})
+            added = 0
+            for k, v in (incoming or {}).items():
+                if isinstance(k, str) and isinstance(v, str) and v:
+                    if merged.get(k) != v:
+                        merged[k] = v; added += 1
+            _save_overrides(merged)
+            self._json({"imported": added, "total": len(merged)})
         elif path == "/api/set-category-batch":
             # {paths: [...], category: "..."}
             paths = data.get("paths", [])
