@@ -851,7 +851,7 @@ HTML_PAGE = """<!DOCTYPE html>
   .creator-actions { display: flex; gap: 6px; }
   .creator-actions button { padding: 3px 8px; font-size: 11px; }
   .grid { padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; align-items: start; }
-  .item { position: relative; border: 2px solid transparent; border-radius: 4px; cursor: pointer; background: #f9f9f9; overflow: visible; }
+  .item { position: relative; border: 2px solid transparent; border-radius: 4px; cursor: pointer; background: #f9f9f9; overflow: visible; content-visibility: auto; contain-intrinsic-size: 200px 180px; }
   .item .thumb-img, .item .no-thumb { border-radius: 2px 2px 0 0; overflow: hidden; }
   .item:hover { border-color: #4a90e2; z-index: 10; }
   .item.marked { border-color: #d9534f; background: #ffe8e8; box-shadow: 0 0 0 1px #d9534f inset; }
