@@ -810,6 +810,7 @@ HTML_PAGE = """<!DOCTYPE html>
   .item.selected::before { content: '✓'; position: absolute; top: 4px; left: 4px; background: #4a90e2; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; z-index: 3; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
   /* 삭제표시 + 다중선택 둘 다: 파란 테두리 + 빨간 배경 tint 만 (별도 배지 X) */
   .item.marked.selected { background: #ffe8e8 !important; }
+  .item.kb-focus { outline: 2px dashed #4a90e2; outline-offset: 2px; }
   .item.marked.selected .thumb-img { filter: brightness(0.9) saturate(0.85); }
   .chip.drop-target { background: #ffe066 !important; color: #333 !important; border-color: #f0a500 !important; transform: scale(1.1); }
   .item.dragging { opacity: 0.4; }
@@ -2185,6 +2186,53 @@ performDelete = async function() {
     pushUndo({type: 'delete', originalPaths, movedTrashPaths: originalPaths});
   }
 };
+
+// ─────── 키보드 네비게이션 ───────
+(function initKbNav(){
+  let focusIdx = -1;
+  const getItems = () => Array.from(document.querySelectorAll('#main .item')).filter(el => !el.classList.contains('trashed') && !el.classList.contains('perma-deleted'));
+  const setFocus = (idx) => {
+    const items = getItems();
+    if (!items.length) return;
+    idx = Math.max(0, Math.min(items.length - 1, idx));
+    document.querySelectorAll('.item.kb-focus').forEach(el => el.classList.remove('kb-focus'));
+    focusIdx = idx;
+    items[idx].classList.add('kb-focus');
+    items[idx].scrollIntoView({block: 'nearest', behavior: 'smooth'});
+  };
+  const columns = () => {
+    const items = getItems();
+    if (items.length < 2) return 1;
+    const y0 = items[0].getBoundingClientRect().top;
+    let n = 1;
+    for (let i = 1; i < items.length; i++) {
+      if (Math.abs(items[i].getBoundingClientRect().top - y0) < 5) n++;
+      else break;
+    }
+    return n;
+  };
+  window.addEventListener('keydown', (e) => {
+    if (e.target.matches('input, textarea, select')) return;
+    if (document.querySelector('dialog[open]')) return;
+    const items = getItems();
+    if (!items.length) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); setFocus(focusIdx < 0 ? 0 : focusIdx + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); setFocus(focusIdx < 0 ? 0 : focusIdx - 1); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); setFocus(focusIdx < 0 ? 0 : focusIdx + columns()); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setFocus(focusIdx < 0 ? 0 : focusIdx - columns()); }
+    else if (e.key === 'Enter' || e.key === ' ') {
+      if (focusIdx < 0) return;
+      e.preventDefault();
+      const el = items[focusIdx];
+      const p = el.dataset.path;
+      if (p) toggle(p);
+    } else if (e.key === 'Escape') {
+      if (bulkSel.size > 0) { e.preventDefault(); clearBulkSel(); }
+      document.querySelectorAll('.item.kb-focus').forEach(el => el.classList.remove('kb-focus'));
+      focusIdx = -1;
+    }
+  });
+})();
 
 // ─────── customConfirm ───────
 function customConfirm(message, opts) {
