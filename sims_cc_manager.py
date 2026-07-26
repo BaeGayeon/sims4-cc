@@ -832,8 +832,8 @@ HTML_PAGE = """<!DOCTYPE html>
   }
   @media (max-width: 900px) {
     #modeSeg button { padding: 0 10px !important; font-size: 11px !important; }
-    .group .label { display: none; }
     button { padding: 0 10px; font-size: 11px; }
+    /* 라벨은 유지 - 사용자가 뭔지 알아야 함 */
   }
   @media (max-width: 640px) {
     header { padding: 6px 10px; }
@@ -886,6 +886,15 @@ HTML_PAGE = """<!DOCTYPE html>
   button.blue { background: var(--c-blue); color: white; border-color: var(--c-blue-hover); }
   button.blue:hover { background: var(--c-blue-hover); border-color: var(--c-blue-hover); }
   button.icon-only { width: var(--h-input); padding: 0; justify-content: center; font-size: 15px; border-radius: 50%; }
+  /* 오버플로우 (⋯) 메뉴 */
+  .menu-wrap { position: relative; display: inline-block; }
+  .overflow-menu { display: none; position: absolute; top: calc(100% + 4px); right: 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); padding: 4px; z-index: 300; min-width: 160px; }
+  .overflow-menu.open { display: block; }
+  .overflow-menu button { display: flex; width: 100%; justify-content: flex-start; border: none; background: transparent; padding: 8px 12px; border-radius: 4px; text-align: left; height: auto; }
+  .overflow-menu button:hover { background: var(--c-bg); }
+  .overflow-menu hr { border: 0; border-top: 1px solid var(--c-border); margin: 4px 0; }
+  /* 헤더 접기 상태: 첫 title-row + stats 만 보임 */
+  body.header-collapsed header > .row { display: none; }
 
   /* Segmented toggle */
   .seg { display: inline-flex; height: var(--h-input); border: 1px solid var(--c-border-strong); border-radius: var(--radius-sm); overflow: hidden; background: var(--c-surface); }
@@ -1116,19 +1125,27 @@ HTML_PAGE = """<!DOCTYPE html>
 <header>
   <div class="title-row">
     <h1>🎮 CC Manager</h1>
-    <div class="stats" id="stats">로딩 중...</div>
     <div class="seg" id="modeSeg" title="선택 모드">
       <button data-v="delete" class="on">🗑️ 삭제 선택</button>
       <button data-v="category">🏷️ 카테고리 편집</button>
     </div>
+    <div style="flex:1;"></div>
     <button onclick="undo()" id="undoBtn" title="되돌리기 (Cmd+Z)" class="icon-only" disabled>↶</button>
     <button onclick="rescan()" class="blue" title="Mods 폴더 다시 스캔">🔄 재스캔</button>
-    <button onclick="openTrash()" title="삭제된 파일 관리">🗑️ 휴지통</button>
-    <button onclick="openStats()" title="사용량 통계">📊 통계</button>
-    <button onclick="openSettings()" title="설정 (경로·다크모드 등)" class="icon-only">⚙️</button>
+    <div class="menu-wrap">
+      <button onclick="toggleOverflowMenu(event)" class="icon-only" title="더보기">⋯</button>
+      <div id="overflowMenu" class="overflow-menu">
+        <button onclick="openTrash(); closeOverflow();">🗑️ 휴지통</button>
+        <button onclick="openStats(); closeOverflow();">📊 통계</button>
+        <button onclick="openSettings(); closeOverflow();">⚙️ 설정</button>
+        <button onclick="openHelp(); closeOverflow();">❓ 도움말</button>
+        <hr>
+        <button onclick="toggleHeaderCollapse(); closeOverflow();" id="collapseBtn">▲ 헤더 접기</button>
+      </div>
+    </div>
     <input type="file" id="importOvFile" accept=".json,application/json" style="display:none;">
-    <button onclick="openHelp()" title="사용법 & 단축키" class="icon-only">❓</button>
   </div>
+  <div class="stats" id="stats" style="padding: 2px 0; color: var(--c-text-muted); font-size: 11px;">로딩 중...</div>
 
   <div class="row">
     <div style="position:relative; display:inline-block;">
@@ -1165,8 +1182,8 @@ HTML_PAGE = """<!DOCTYPE html>
       </select>
     </div>
     <div class="group">
-      <span class="label">크기</span>
-      <input type="range" id="zoomSlider" min="80" max="240" value="130" style="width: 90px; height: 20px;">
+      <span class="label">🖼️ 썸네일</span>
+      <input type="range" id="zoomSlider" min="80" max="240" value="130" style="width: 90px; height: 20px;" title="아이템 썸네일 크기">
     </div>
   </div>
 
@@ -1821,6 +1838,36 @@ async function applyToPaths(paths, category) {
 function openHelp() {
   document.getElementById('help-dialog').showModal();
 }
+
+// ─────── 오버플로우 메뉴 ───────
+function toggleOverflowMenu(e) {
+  e.stopPropagation();
+  document.getElementById('overflowMenu').classList.toggle('open');
+}
+function closeOverflow() {
+  document.getElementById('overflowMenu').classList.remove('open');
+}
+document.addEventListener('click', (e) => {
+  const m = document.getElementById('overflowMenu');
+  if (m && !m.contains(e.target) && !e.target.closest('.menu-wrap button')) closeOverflow();
+});
+
+// ─────── 헤더 접기 ───────
+function toggleHeaderCollapse() {
+  const collapsed = document.body.classList.toggle('header-collapsed');
+  localStorage.setItem('ccm_header_collapsed', collapsed ? '1' : '0');
+  const btn = document.getElementById('collapseBtn');
+  if (btn) btn.textContent = collapsed ? '▼ 헤더 펼치기' : '▲ 헤더 접기';
+}
+(function initHeaderCollapse() {
+  if (localStorage.getItem('ccm_header_collapsed') === '1') {
+    document.body.classList.add('header-collapsed');
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('collapseBtn');
+      if (btn) btn.textContent = '▼ 헤더 펼치기';
+    });
+  }
+})();
 
 // ─────── 설정 다이얼로그 ───────
 function openSettings() {
