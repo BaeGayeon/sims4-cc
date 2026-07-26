@@ -1257,7 +1257,12 @@ function render() {
   const main = document.getElementById('main');
   main.innerHTML = '';
   if (!MANIFEST || !MANIFEST.creators.length) {
-    main.innerHTML = '<div class="progress">CC 없음. 재스캔을 눌러보세요.</div>';
+    main.innerHTML = `<div class="progress" style="padding:40px;">
+      <div style="font-size:48px;margin-bottom:12px;">👋</div>
+      <h2 style="margin:0 0 8px 0;">환영합니다!</h2>
+      <div style="color:#666;margin-bottom:20px;">Mods 폴더에서 아직 CC를 스캔하지 않았어요.<br>아래 버튼을 눌러 시작해 보세요.</div>
+      <button class="blue" style="font-size:14px;padding:10px 20px;" onclick="rescan()">🔄 스캔 시작</button>
+    </div>`;
     updateFooter();
     updateStats(0, 0);
     return;
@@ -1420,8 +1425,34 @@ function render() {
     }
     main.appendChild(section);
   }
+  if (totalItems > 0 && visibleItems === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'progress';
+    empty.style.cssText = 'padding:40px;';
+    empty.innerHTML = `<div style="font-size:36px;margin-bottom:8px;">🔍</div>
+      <h3 style="margin:0 0 6px 0;">일치하는 아이템 없음</h3>
+      <div style="color:#666;margin-bottom:16px;">현재 필터 조건에 맞는 항목이 없어요.</div>
+      <button class="blue" onclick="resetFilters()">필터 초기화</button>`;
+    main.appendChild(empty);
+  }
   updateStats(totalItems, visibleItems);
   updateFooter();
+}
+
+function resetFilters() {
+  currentFilter = '';
+  showMarkedOnly = false;
+  showOverrideOnly = false;
+  hideTrashed = false;
+  hidePerma = false;
+  metaFilter = '';
+  subFilter = '';
+  const s = document.getElementById('search'); if (s) s.value = '';
+  const t1 = document.getElementById('tglMarked'); if (t1) t1.checked = false;
+  const t2 = document.getElementById('tglOverride'); if (t2) t2.checked = false;
+  const t3 = document.getElementById('tglHideTrashed'); if (t3) t3.checked = false;
+  const t4 = document.getElementById('tglHidePerma'); if (t4) t4.checked = false;
+  render();
 }
 
 function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
