@@ -802,16 +802,17 @@ HTML_PAGE = """<!DOCTYPE html>
     --c-red: #b23c2b;
     --c-red-hover: #9c3324;
     --c-red-bg: #fdeeeb;
-    --c-bg: #f4f2ee;
+    --c-bg: #f4f4f5;
     --c-surface: #ffffff;
-    --c-surface-2: #f7f5f1;
-    --c-seg-bg: #f1efeb;
+    --c-surface-2: #f6f6f7;
+    --c-seg-bg: #eeeeef;
     --c-border: rgba(0,0,0,.08);
     --c-border-strong: rgba(0,0,0,.13);
-    --c-text: #1c1b19;
-    --c-text-muted: #6f6d68;
-    --c-text-subtle: #a8a6a0;
-    --c-text-label: #8b8983;
+    --c-text: #19191b;
+    --c-text-muted: #6b6b70;
+    --c-text-subtle: #a3a3a8;
+    --c-text-label: #86868c;
+    --c-overlay: rgba(255,255,255,.92);
     --radius-sm: 7px;
     --radius-md: 10px;
     --radius-lg: 12px;
@@ -906,39 +907,39 @@ HTML_PAGE = """<!DOCTYPE html>
 
   /* Segmented toggle (묶음/모드 공용 — 색코딩 없음, 흰 알약이 선택 표시) */
   .seg { display: inline-flex; align-items: center; height: var(--h-input); border: none; border-radius: 9px; overflow: hidden; background: var(--c-seg-bg); padding: 3px; gap: 2px; box-sizing: border-box; }
-  .seg button { border: none !important; border-radius: 6px !important; padding: 0 12px !important; background: transparent; font-size: 12px; font-weight: 500; height: 26px !important; color: #7d7b76; box-shadow: none; }
-  .seg button.on { background: #fff !important; color: var(--c-text) !important; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .seg button { border: none !important; border-radius: 6px !important; padding: 0 12px !important; background: transparent; font-size: 12px; font-weight: 500; height: 26px !important; color: var(--c-text-muted); box-shadow: none; }
+  .seg button.on { background: var(--c-surface) !important; color: var(--c-text) !important; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
   .seg button:not(.on):hover { color: var(--c-text-muted); }
   #modeSeg button { padding: 0 14px !important; }
   /* Switch toggle */
-  .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #444; cursor: pointer; user-select: none; }
-  .switch input { appearance: none; -webkit-appearance: none; width: 32px; height: 18px; background: #ccc; border-radius: 10px; position: relative; cursor: pointer; transition: background .2s; margin: 0; }
-  .switch input:checked { background: #4a90e2; }
-  .switch input::before { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: white; border-radius: 50%; transition: transform .2s; }
+  .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--c-text-muted); cursor: pointer; user-select: none; }
+  .switch input { appearance: none; -webkit-appearance: none; width: 32px; height: 18px; background: var(--c-border-strong); border-radius: 10px; position: relative; cursor: pointer; transition: background .2s; margin: 0; }
+  .switch input:checked { background: var(--c-blue); }
+  .switch input::before { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: var(--c-surface); border-radius: 50%; transition: transform .2s; }
   .switch input:checked::before { transform: translateX(14px); }
   /* 필터 팝오버 안 토글 칩 (스위치 대신 파란 알약) */
-  .chip-toggle { height: 28px; padding: 0 12px; border-radius: 14px; background: var(--c-surface); border: 1px solid var(--c-border-strong); color: #5c5a55; font-size: 11.5px; font-weight: 500; }
+  .chip-toggle { height: 28px; padding: 0 12px; border-radius: 14px; background: var(--c-surface); border: 1px solid var(--c-border-strong); color: var(--c-text-muted); font-size: 11.5px; font-weight: 500; }
   .chip-toggle:hover { background: var(--c-bg); }
   .chip-toggle.on { background: var(--c-blue-bg); color: var(--c-blue); border-color: var(--c-blue); font-weight: 600; }
-  .pill-btn { height: 28px; padding: 0 11px; border-radius: 14px; background: var(--c-surface); border: 1px solid var(--c-border-strong); color: #3a3835; font-size: 11.5px; font-weight: 500; }
+  .pill-btn { height: 28px; padding: 0 11px; border-radius: 14px; background: var(--c-surface); border: 1px solid var(--c-border-strong); color: var(--c-text-muted); font-size: 11.5px; font-weight: 500; }
   .pill-btn:hover { background: var(--c-bg); }
   .pill-btn.danger { color: var(--c-red); }
   .pill-btn.danger:hover { background: var(--c-red-bg); }
   #filterToggleBtn.active { border-color: var(--c-blue) !important; background: var(--c-blue-bg) !important; color: var(--c-blue) !important; font-weight: 600; }
   /* 카테고리 알약: 미선택 흰 배경, 선택 시 진한 배경(색 코딩 없이 무채색 강조) */
   .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .chip { height: 30px; padding: 0 12px; border-radius: 15px; background: var(--c-surface); border: 1px solid var(--c-border-strong); cursor: pointer; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 7px; transition: all .12s; color: #4a4844; }
+  .chip { height: 30px; padding: 0 12px; border-radius: 15px; background: var(--c-surface); border: 1px solid var(--c-border-strong); cursor: pointer; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 7px; transition: all .12s; color: var(--c-text-muted); }
   .chip:hover { background: var(--c-bg); }
-  .chip.on { background: var(--c-text); color: #fff; border-color: var(--c-text); font-weight: 600; }
+  .chip.on { background: var(--c-text); color: var(--c-bg); border-color: var(--c-text); font-weight: 600; }
   .chip .count { font: 600 10.5px ui-monospace, Menlo, monospace; color: var(--c-text-subtle); }
-  .chip.on .count { color: rgba(255,255,255,.7); }
+  .chip.on .count { color: var(--c-bg); opacity: .7; }
   .subchips { padding-left: 16px; }
   #subRow { padding-top: 0 !important; }
-  .subchip { height: 28px; padding: 0 11px; border-radius: 14px; background: var(--c-surface); border: 1px solid var(--c-border-strong); cursor: pointer; font-size: 11.5px; font-weight: 500; color: #4a4844; }
+  .subchip { height: 28px; padding: 0 11px; border-radius: 14px; background: var(--c-surface); border: 1px solid var(--c-border-strong); cursor: pointer; font-size: 11.5px; font-weight: 500; color: var(--c-text-muted); }
   .subchip:hover { background: var(--c-bg); }
-  .subchip.on { background: var(--c-text); color: #fff; border-color: var(--c-text); font-weight: 600; }
+  .subchip.on { background: var(--c-text); color: var(--c-bg); border-color: var(--c-text); font-weight: 600; }
   .subchip .count { font: 600 10px ui-monospace, Menlo, monospace; color: var(--c-text-subtle); margin-left: 3px; }
-  .subchip.on .count { color: rgba(255,255,255,.7); }
+  .subchip.on .count { color: var(--c-bg); opacity: .7; }
   .label { font-size: 11.5px; color: var(--c-text-label); margin-right: 4px; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
   main { padding: 16px; }
   .creator { background: var(--c-surface); margin-bottom: 14px; border-radius: var(--radius-md); overflow: visible; box-shadow: var(--shadow-sm); border: 1px solid var(--c-border); }
@@ -953,8 +954,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .grid { padding: 14px; display: flex; flex-wrap: wrap; gap: 12px; position: relative; }
   .item { position: relative; width: var(--h-thumb); cursor: pointer; }
   /* CAS 썸네일 원본 비율(104x148, 세로형)을 유지 - 정사각형으로 강제하지 않음 */
-  .item .thumb-frame { position: relative; width: var(--h-thumb); aspect-ratio: 104 / 148; border-radius: 9px; overflow: hidden; border: 2px solid var(--c-border-strong); box-sizing: border-box; background: #f9f9f9; }
-  .item .thumb-img { display: block; width: 100%; height: 100%; object-fit: cover; background: #f4f2ee; }
+  .item .thumb-frame { position: relative; width: var(--h-thumb); aspect-ratio: 104 / 148; border-radius: 9px; overflow: hidden; border: 2px solid var(--c-border-strong); box-sizing: border-box; background: var(--c-surface-2); }
+  .item .thumb-img { display: block; width: 100%; height: 100%; object-fit: cover; background: var(--c-surface-2); }
   .item:hover .thumb-frame { border-color: var(--c-blue); }
   body.mode-category .item:not(.trashed):hover { cursor: cell; }
   body.mode-category .item:not(.trashed):hover .thumb-frame { border-color: var(--c-blue); }
@@ -978,29 +979,29 @@ HTML_PAGE = """<!DOCTYPE html>
   .item.perma-deleted .name, .item.perma-deleted .name-full { text-decoration: line-through; color: var(--c-text-subtle); }
   .trash-badge { position: absolute; top: 5px; left: 5px; background: rgba(20,19,18,.72); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; z-index: 3; }
   /* 카테고리 텍스트 뱃지: 썸네일 우상단 흰 알약 */
-  .cat-pill { position: absolute; right: 5px; top: 5px; font-size: 9px; font-weight: 600; color: #4a4844; background: rgba(255,255,255,.92); border-radius: 9px; padding: 2px 6px; box-shadow: 0 1px 2px rgba(0,0,0,.12); z-index: 2; cursor: context-menu; max-width: 78%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cat-pill { position: absolute; right: 5px; top: 5px; font-size: 9px; font-weight: 600; color: var(--c-text-muted); background: var(--c-overlay); border-radius: 9px; padding: 2px 6px; box-shadow: 0 1px 2px rgba(0,0,0,.12); z-index: 2; cursor: context-menu; max-width: 78%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cat-pill.override { background: #fff3c4; box-shadow: 0 0 0 1px #d4a017; }
   /* 카테고리 변경 메뉴: 클릭한 아이템에 앵커되는 팝업 (전역 고정 아님) */
-  #ctxMenu { position: absolute; background: var(--c-surface); border: 1px solid rgba(0,0,0,.1); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 20; width: 300px; display: none; overflow: hidden; }
+  #ctxMenu { position: absolute; background: var(--c-surface); border: 1px solid var(--c-border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 20; width: 300px; display: none; overflow: hidden; }
   #ctxMenu .ctx-header { padding: 11px 13px 9px; border-bottom: 1px solid var(--c-border); }
   #ctxMenu .ctx-title { font-size: 11.5px; font-weight: 600; color: var(--c-text); }
   #ctxMenu .ctx-file { font: 400 10.5px ui-monospace, Menlo, monospace; color: var(--c-text-subtle); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #ctxMenu .ctx-search-wrap { padding: 9px 11px; }
   #ctxMenu .ctx-search { width: 100%; height: 29px; padding: 0 10px; border: 1px solid var(--c-border-strong); border-radius: 6px; background: var(--c-surface-2); font-size: 11.5px; outline: none; }
-  #ctxMenu .ctx-search:focus { border-color: var(--c-blue); background: #fff; }
+  #ctxMenu .ctx-search:focus { border-color: var(--c-blue); background: var(--c-surface); }
   #ctxMenu .ctx-list { max-height: 250px; overflow-y: auto; padding: 0 7px 8px; }
   #ctxMenu .ctx-section { font-size: 10px; font-weight: 600; color: var(--c-text-subtle); letter-spacing: .06em; padding: 9px 6px 5px; }
-  #ctxMenu .ctx-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 9px; border-radius: 6px; cursor: pointer; font-size: 12px; color: #3a3835; }
+  #ctxMenu .ctx-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 9px; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--c-text-muted); }
   #ctxMenu .ctx-item:hover { background: var(--c-bg); }
   #ctxMenu .ctx-item.current { color: var(--c-blue); background: var(--c-blue-bg); font-weight: 600; }
   #ctxMenu .ctx-check { color: var(--c-blue); font-weight: 700; font-size: 11px; opacity: 0; }
   #ctxMenu .ctx-item.current .ctx-check { opacity: 1; }
   #ctxMenu .ctx-reset { border-top: 1px solid var(--c-border); margin: 4px 7px 8px; padding: 9px 9px 0; color: var(--c-red); cursor: pointer; font-size: 11.5px; }
-  .creator-sub { padding: 0 6px 2px; font-size: 9px; color: #999; font-style: italic; }
-  .item .no-thumb { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; text-align: center; color: var(--c-text-subtle); font-size: 11px; background: repeating-linear-gradient(135deg, #efedea 0 6px, #e6e3df 6px 12px); }
+  .creator-sub { padding: 0 6px 2px; font-size: 9px; color: var(--c-text-subtle); font-style: italic; }
+  .item .no-thumb { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; text-align: center; color: var(--c-text-subtle); font-size: 11px; background: repeating-linear-gradient(135deg, var(--c-surface-2) 0 6px, var(--c-seg-bg) 6px 12px); }
   /* 이름: 썸네일 아래 일반 흐름, 2줄까지 잘리지 않고 완전히 보임 */
-  .item .name { margin-top: 6px; padding: 0 2px; font-size: 10.5px; line-height: 1.4; color: #5c5a55; word-break: break-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
-  .item .name-full { display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: -2px; padding: 4px 6px; font-size: 10.5px; color: #222; word-break: break-all; line-height: 1.4; background: white; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,.15); border-radius: 4px; }
+  .item .name { margin-top: 6px; padding: 0 2px; font-size: 10.5px; line-height: 1.4; color: var(--c-text-muted); word-break: break-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+  .item .name-full { display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: -2px; padding: 4px 6px; font-size: 10.5px; color: var(--c-text); word-break: break-all; line-height: 1.4; background: var(--c-surface); z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,.15); border-radius: 4px; }
   .item:hover .name-full { display: block; }
   .item .sz { position: absolute; left: 5px; bottom: 5px; background: rgba(20,19,18,.62); color: white; padding: 2px 5px; font-size: 9.5px; font-weight: 600; font-family: ui-monospace, Menlo, monospace; border-radius: 4px; pointer-events: none; z-index: 2; }
   .thumb-img, .no-thumb { cursor: pointer; }
@@ -1019,8 +1020,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .footer-sub { font-size: 11px; color: var(--c-text-label); }
   .footer-sub b { font-weight: 600; }
   .footer-sub .red { color: var(--c-red); }
-  /* 라벨+셀렉트+버튼을 한 덩어리로 묶어서 줄바꿈 시에도 서로 떨어지지 않게 함 */
-  .footer-cat-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  /* 관련 컨트롤을 한 덩어리로 묶어서 줄바꿈 시에도 서로 떨어지지 않게 함 (라벨+셀렉트+버튼, 구분선+버튼 등) */
+  .footer-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   #footer select { height: 34px; flex-shrink: 0; }
   #footer button.blue, #footer button.danger-outline { height: 34px; padding: 0 16px; font-weight: 600; font-size: 12.5px; flex-shrink: 0; }
   #footer .divider { flex-shrink: 0; }
@@ -1031,132 +1032,74 @@ HTML_PAGE = """<!DOCTYPE html>
   .toast.show { opacity: 1; }
   .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px; }
   .badge.warn { background: #fff3cd; color: #856404; }
-  .progress { background: #f0f0f0; padding: 20px; border-radius: 8px; margin: 40px auto; max-width: 500px; text-align: center; }
+  .progress { background: var(--c-surface-2); color: var(--c-text); padding: 20px; border-radius: 8px; margin: 40px auto; max-width: 500px; text-align: center; }
   /* 빈 상태: 배경 박스 없이 심플하게 */
   .empty-state { text-align: center; padding: 60px 20px; color: var(--c-text-muted); }
   .empty-state-icon { font-size: 32px; opacity: .5; margin-bottom: 10px; }
   .empty-state-title { font-size: 14px; font-weight: 600; color: var(--c-text); margin-bottom: 4px; }
   .empty-state-desc { font-size: 12px; margin-bottom: 14px; }
-  .progress-bar { height: 8px; background: #ddd; border-radius: 4px; overflow: hidden; margin-top: 12px; }
-  .progress-bar > div { height: 100%; background: #4a90e2; transition: width .3s; }
-  dialog { border: none; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.2); padding: 20px; max-width: 500px; }
+  .progress-bar { height: 8px; background: var(--c-border-strong); border-radius: 4px; overflow: hidden; margin-top: 12px; }
+  .progress-bar > div { height: 100%; background: var(--c-blue); transition: width .3s; }
+  dialog { border: none; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.2); padding: 20px; max-width: 500px; background: var(--c-surface); color: var(--c-text); }
   dialog::backdrop { background: rgba(0,0,0,.5); }
   /* 모달 우측 상단 X 닫기 버튼: 카드 안쪽에 온전히 위치, 다른 아이콘 버튼과 동일한 톤 */
   .dlg-close { position: absolute; top: 14px; right: 14px; width: 26px; height: 26px; padding: 0; font-size: 13px; border-radius: 50%; background: transparent; border: none; color: var(--c-text-muted); cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; }
-  kbd { background: #f0f0f0; border: 1px solid #ccc; border-bottom-width: 2px; border-radius: 3px; padding: 1px 6px; font-size: 11px; font-family: -apple-system, monospace; }
+  kbd { background: var(--c-surface-2); color: var(--c-text); border: 1px solid var(--c-border-strong); border-bottom-width: 2px; border-radius: 3px; padding: 1px 6px; font-size: 11px; font-family: -apple-system, monospace; }
   .dlg-close:hover { background: var(--c-bg); color: var(--c-text); }
   dialog { position: relative; }
   /* 삭제표시 목록 다이얼로그의 개별 아이템 "표시 해제" 버튼 - 카테고리 펄과 동일한 코너 배치 */
-  .marked-remove-btn { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%; border: none; background: rgba(255,255,255,.92); color: var(--c-text-muted); font-size: 11px; padding: 0; cursor: pointer; z-index: 4; box-shadow: 0 1px 2px rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center; }
+  .marked-remove-btn { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%; border: none; background: var(--c-overlay); color: var(--c-text-muted); font-size: 11px; padding: 0; cursor: pointer; z-index: 4; box-shadow: 0 1px 2px rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center; }
   .marked-remove-btn:hover { background: var(--c-red); color: #fff; }
   /* 휴지통 목록: 그리드 셀 폭에 맞춰 썸네일 프레임을 채움 (고정 --h-thumb 대신) */
   .trash-tile.item, .marked-tile.item { width: 100%; }
   .trash-tile .thumb-frame, .marked-tile .thumb-frame { width: 100%; }
   .trash-check { position: absolute; top: 6px; left: 6px; z-index: 4; transform: scale(1.2); }
-  .trash-item { padding: 6px 8px; border-bottom: 1px solid #eee; display: flex; gap: 8px; font-size: 12px; align-items: center; }
+  .trash-item { padding: 6px 8px; border-bottom: 1px solid var(--c-border); display: flex; gap: 8px; font-size: 12px; align-items: center; }
   .trash-item input { margin: 0; }
-  /* Dark mode 규칙 */
+  /* ── 다크 모드: 디자인 토큰(색상 변수)만 재정의 → 모든 컴포넌트가 자동으로 대응됨 ── */
   html[data-theme="light"] { color-scheme: light; }
-  html[data-theme="dark"] { color-scheme: dark; }
-  /* 라이트 강제 시 auto 다크 media 규칙 무시하도록 (우선순위 이용 - 아래 media 규칙에 :not() 적용은 각 규칙마다 못 넣으니 대신 명시적 다크 블록만 데이터-속성 기반, media 는 auto 만) */
-  @media (prefers-color-scheme: dark) {
-    html[data-theme="light"] body,
-    html[data-theme="light"] header,
-    html[data-theme="light"] dialog,
-    html[data-theme="light"] .item,
-    html[data-theme="light"] .creator { background: revert !important; color: revert !important; border-color: revert !important; }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --c-blue: #6fa4ec;
+    --c-blue-hover: #86b3ef;
+    --c-blue-bg: rgba(111,164,236,.16);
+    --c-red: #e2695c;
+    --c-red-hover: #e87e72;
+    --c-red-bg: rgba(226,105,92,.16);
+    --c-bg: #19191a;
+    --c-surface: #232324;
+    --c-surface-2: #2a2a2c;
+    --c-seg-bg: #2a2a2c;
+    --c-border: rgba(255,255,255,.08);
+    --c-border-strong: rgba(255,255,255,.14);
+    --c-text: #f2f2f3;
+    --c-text-muted: #a8a8ac;
+    --c-text-subtle: #6e6e72;
+    --c-text-label: #8a8a8e;
+    --c-overlay: rgba(42,42,44,.88);
   }
   @media (prefers-color-scheme: dark) {
-    body { background: #1a1a1a; color: #e0e0e0; }
-    header { background: #242424; border-bottom-color: #333; box-shadow: 0 2px 4px rgba(0,0,0,.3); }
-    .row { border-top-color: #2a2a2a; }
-    .stats { color: #999; }
-    .group { background: #2a2a2a; }
-    .group .label, .label { color: #888; }
-    .divider { background: #333; }
-    input[type=search], select, button { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
-    button:hover { background: #333; }
-    .seg { border-color: #444; }
-    .seg button { background: #2a2a2a; color: #e0e0e0; }
-    .seg button + button { border-left-color: #444; }
-    .seg button.on { background: #555; }
-    .chip { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
-    .chip:hover { background: #333; }
-    .subchip { background: #333; color: #e0e0e0; border-color: #444; }
-    .subchip:hover { background: #3a3a3a; }
-    .creator { background: #242424; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
-    .creator-header { background: #2a2a2a; border-bottom-color: #333; }
-    .creator-count { color: #999; }
-    .item { background: #2a2a2a; }
-    .item .name { color: #bbb; }
-    .item .name-full { background: #333; color: #e0e0e0; box-shadow: 0 -2px 6px rgba(0,0,0,.4); }
-    .item .no-thumb { background: #333; color: #888; }
-    .cat-icon { background: rgba(50,50,50,.92); color: #e0e0e0; }
-    .item.trashed { background: #2a2a2a; border-color: #666; }
-    .item.perma-deleted { background: #3a2a2a; }
-    dialog { background: #242424; color: #e0e0e0; }
-    .dlg-close { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
-    .dlg-close:hover { background: #333; }
-    .progress { background: #2a2a2a; color: #e0e0e0; }
-    .progress-bar { background: #333; }
-    #ctxMenu { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
-    #ctxMenu .ctx-header { color: #888; border-bottom-color: #333; }
-    #ctxMenu .ctx-item:hover { background: #333; }
-    #ctxMenu .ctx-item.current { background: #1e3a5f; }
-    #ctxMenu .ctx-item.reset { border-top-color: #333; }
-    .creator-sub { color: #777; }
-    kbd { background: #333; border-color: #555; color: #e0e0e0; }
-    .trash-item { border-bottom-color: #333; }
-    /* 유지: 표시된 아이템 색상 유지 */
-    .item.marked { border-color: #d9534f; background: #3a1e1e; }
-    .item.marked.selected { background: #3a1e1e !important; }
+    html:not([data-theme="light"]) {
+      color-scheme: dark;
+      --c-blue: #6fa4ec;
+      --c-blue-hover: #86b3ef;
+      --c-blue-bg: rgba(111,164,236,.16);
+      --c-red: #e2695c;
+      --c-red-hover: #e87e72;
+      --c-red-bg: rgba(226,105,92,.16);
+      --c-bg: #19191a;
+      --c-surface: #232324;
+      --c-surface-2: #2a2a2c;
+      --c-seg-bg: #2a2a2c;
+      --c-border: rgba(255,255,255,.08);
+      --c-border-strong: rgba(255,255,255,.14);
+      --c-text: #f2f2f3;
+      --c-text-muted: #a8a8ac;
+      --c-text-subtle: #6e6e72;
+      --c-text-label: #8a8a8e;
+      --c-overlay: rgba(42,42,44,.88);
+    }
   }
-  /* 명시적 다크 모드 (설정에서 선택 시) */
-
-    html[data-theme="dark"] body { background: #1a1a1a; color: #e0e0e0; }
-    html[data-theme="dark"] header { background: #242424; border-bottom-color: #333; box-shadow: 0 2px 4px rgba(0,0,0,.3); }
-    html[data-theme="dark"] .row { border-top-color: #2a2a2a; }
-    html[data-theme="dark"] .stats { color: #999; }
-    html[data-theme="dark"] .group { background: #2a2a2a; }
-    html[data-theme="dark"] .group .label, html[data-theme="dark"] .label { color: #888; }
-    html[data-theme="dark"] .divider { background: #333; }
-    html[data-theme="dark"] input[type=search], html[data-theme="dark"] select, html[data-theme="dark"] button { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
-    html[data-theme="dark"] button:hover { background: #333; }
-    html[data-theme="dark"] .seg { border-color: #444; }
-    html[data-theme="dark"] .seg button { background: #2a2a2a; color: #e0e0e0; }
-    html[data-theme="dark"] .seg button + button { border-left-color: #444; }
-    html[data-theme="dark"] .seg button.on { background: #555; }
-    html[data-theme="dark"] .chip { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
-    html[data-theme="dark"] .chip:hover { background: #333; }
-    html[data-theme="dark"] .subchip { background: #333; color: #e0e0e0; border-color: #444; }
-    html[data-theme="dark"] .subchip:hover { background: #3a3a3a; }
-    html[data-theme="dark"] .creator { background: #242424; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
-    html[data-theme="dark"] .creator-header { background: #2a2a2a; border-bottom-color: #333; }
-    html[data-theme="dark"] .creator-count { color: #999; }
-    html[data-theme="dark"] .item { background: #2a2a2a; }
-    html[data-theme="dark"] .item .name { color: #bbb; }
-    html[data-theme="dark"] .item .name-full { background: #333; color: #e0e0e0; box-shadow: 0 -2px 6px rgba(0,0,0,.4); }
-    html[data-theme="dark"] .item .no-thumb { background: #333; color: #888; }
-    html[data-theme="dark"] .cat-icon { background: rgba(50,50,50,.92); color: #e0e0e0; }
-    html[data-theme="dark"] .item.trashed { background: #2a2a2a; border-color: #666; }
-    html[data-theme="dark"] .item.perma-deleted { background: #3a2a2a; }
-    html[data-theme="dark"] dialog { background: #242424; color: #e0e0e0; }
-    html[data-theme="dark"] .dlg-close { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
-    html[data-theme="dark"] .dlg-close:hover { background: #333; }
-    html[data-theme="dark"] .progress { background: #2a2a2a; color: #e0e0e0; }
-    html[data-theme="dark"] .progress-bar { background: #333; }
-    html[data-theme="dark"] #ctxMenu { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
-    html[data-theme="dark"] #ctxMenu .ctx-header { color: #888; border-bottom-color: #333; }
-    html[data-theme="dark"] #ctxMenu .ctx-item:hover { background: #333; }
-    html[data-theme="dark"] #ctxMenu .ctx-item.current { background: #1e3a5f; }
-    html[data-theme="dark"] #ctxMenu .ctx-item.reset { border-top-color: #333; }
-    html[data-theme="dark"] .creator-sub { color: #777; }
-    html[data-theme="dark"] kbd { background: #333; border-color: #555; color: #e0e0e0; }
-    html[data-theme="dark"] .trash-item { border-bottom-color: #333; }
-    /* 유지: 표시된 아이템 색상 유지 */
-    html[data-theme="dark"] .item.marked { border-color: #d9534f; background: #3a1e1e; }
-    html[data-theme="dark"] .item.marked.selected { background: #3a1e1e !important; }
-  
 </style>
 </head><body>
 <header>
@@ -1245,13 +1188,15 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
   <button class="pill-btn" onclick="clearBulkSel()" title="다중선택 전체 해제">선택 해제</button>
   <div style="flex:1;"></div>
-  <div class="footer-cat-group">
+  <div class="footer-group">
     <span class="label">선택 항목을</span>
     <select id="bulkCat"><option value="">카테고리 선택…</option></select>
     <button class="blue" onclick="applyBulkCategory()" id="applyCatBtn" disabled>카테고리 지정</button>
   </div>
-  <div class="divider"></div>
-  <button class="danger-outline" onclick="performDelete()" id="toTrashBtn" disabled>휴지통으로 이동</button>
+  <div class="footer-group">
+    <div class="divider"></div>
+    <button class="danger-outline" onclick="performDelete()" id="toTrashBtn" disabled>휴지통으로 이동</button>
+  </div>
 </div>
 <dialog id="settings-dialog" style="max-width: 560px; width: 90vw;">
   <button class="dlg-close" onclick="document.getElementById('settings-dialog').close()">✕</button>
@@ -1267,7 +1212,7 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
     <div>
       <label style="font-weight: 600; font-size: 13px;">📂 Sims 4 경로</label>
-      <div style="font-size: 12px; color: #666; margin-top: 4px;" id="currentPath"></div>
+      <div style="font-size: 12px; color: var(--c-text-muted); margin-top: 4px;" id="currentPath"></div>
       <div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
         <input type="text" id="pathInput" placeholder="예: ~/Documents/Electronic Arts/The Sims 4" style="flex:1; padding: 5px 8px; font-size: 12px;">
         <button onclick="savePath()" class="blue">저장</button>
@@ -1286,8 +1231,8 @@ HTML_PAGE = """<!DOCTYPE html>
 </dialog>
 <dialog id="marked-dialog" style="max-width:720px; width:90vw;">
   <button class="dlg-close" onclick="document.getElementById('marked-dialog').close()">✕</button>
-  <h3>🗑️ 삭제 표시된 아이템 <span id="marked-summary" style="font-weight:normal; color:#666; font-size:13px;"></span></h3>
-  <div style="max-height:60vh; overflow-y:auto; margin:8px 0; border:1px solid #eee; border-radius:6px; padding:8px; background:#fafafa;">
+  <h3>🗑️ 삭제 표시된 아이템 <span id="marked-summary" style="font-weight:normal; color:var(--c-text-muted); font-size:13px;"></span></h3>
+  <div style="max-height:60vh; overflow-y:auto; margin:8px 0; border:1px solid var(--c-border); border-radius:6px; padding:8px; background:var(--c-surface-2);">
     <div id="marked-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:6px;"></div>
   </div>
   <div style="display:flex; gap:8px; justify-content:flex-end;">
@@ -1299,17 +1244,17 @@ HTML_PAGE = """<!DOCTYPE html>
 <div id="ctxMenu"></div>
 <dialog id="help-dialog" style="max-width: 640px; width: 90vw; padding: 0;">
   <button class="dlg-close" onclick="document.getElementById('help-dialog').close()">✕</button>
-  <div style="padding: 16px 22px; border-bottom: 1px solid #eee;">
+  <div style="padding: 16px 22px; border-bottom: 1px solid var(--c-border);">
     <h2 style="margin: 0; font-size: 17px;">🎮 사용법</h2>
   </div>
   <div style="padding: 16px 22px; max-height: 72vh; overflow-y: auto; font-size: 13px; line-height: 1.55;">
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
-      <div style="border: 2px solid #d9534f; background: #fbecec; border-radius: 8px; padding: 10px 12px;">
+      <div style="border: 2px solid #d9534f; background: #fbecec; color: #402020; border-radius: 8px; padding: 10px 12px;">
         <div style="font-weight: 700; color: #d9534f; margin-bottom: 4px;">🗑️ 삭제 모드</div>
         <div style="font-size: 12px;">클릭해서 지울 것 <b>표시</b> → 하단 "🗑️ 휴지통으로 이동" 버튼</div>
       </div>
-      <div style="border: 2px solid #4a90e2; background: #eaf3fc; border-radius: 8px; padding: 10px 12px;">
+      <div style="border: 2px solid #4a90e2; background: #eaf3fc; color: #1a2e42; border-radius: 8px; padding: 10px 12px;">
         <div style="font-weight: 700; color: #4a90e2; margin-bottom: 4px;">🏷️ 카테고리 모드</div>
         <div style="font-size: 12px;">클릭해서 <b>다중 선택</b> → 하단 드롭다운으로 카테고리 지정</div>
       </div>
@@ -1325,12 +1270,12 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <h3 style="margin: 16px 0 6px; font-size: 14px;">⌨️ 단축키</h3>
     <table style="width:100%; border-collapse: collapse; font-size: 12px;">
-      <tr><td style="padding:4px 8px; color:#666; width:120px;"><kbd>Cmd+Z</kbd></td><td>되돌리기</td></tr>
-      <tr><td style="padding:4px 8px; color:#666;"><kbd>Cmd+클릭</kbd></td><td>모드 상관없이 다중 선택</td></tr>
-      <tr><td style="padding:4px 8px; color:#666;">빈 공간 드래그</td><td>박스 다중 선택</td></tr>
-      <tr><td style="padding:4px 8px; color:#666;">우클릭</td><td>단일 카테고리 변경 메뉴</td></tr>
-      <tr><td style="padding:4px 8px; color:#666;">이름 클릭</td><td>파일명 복사 (검색용)</td></tr>
-      <tr><td style="padding:4px 8px; color:#666;">이름 hover</td><td>긴 파일명 전체 표시</td></tr>
+      <tr><td style="padding:4px 8px; color:var(--c-text-muted); width:120px;"><kbd>Cmd+Z</kbd></td><td>되돌리기</td></tr>
+      <tr><td style="padding:4px 8px; color:var(--c-text-muted);"><kbd>Cmd+클릭</kbd></td><td>모드 상관없이 다중 선택</td></tr>
+      <tr><td style="padding:4px 8px; color:var(--c-text-muted);">빈 공간 드래그</td><td>박스 다중 선택</td></tr>
+      <tr><td style="padding:4px 8px; color:var(--c-text-muted);">우클릭</td><td>단일 카테고리 변경 메뉴</td></tr>
+      <tr><td style="padding:4px 8px; color:var(--c-text-muted);">이름 클릭</td><td>파일명 복사 (검색용)</td></tr>
+      <tr><td style="padding:4px 8px; color:var(--c-text-muted);">이름 hover</td><td>긴 파일명 전체 표시</td></tr>
     </table>
 
     <h3 style="margin: 16px 0 6px; font-size: 14px;">💡 팁</h3>
@@ -1341,7 +1286,7 @@ HTML_PAGE = """<!DOCTYPE html>
       <li>수동 지정한 카테고리는 재스캔 시에도 유지</li>
     </ul>
 
-    <p style="margin: 14px 0 0; padding: 8px; background: #f7f7f7; border-radius: 4px; font-size: 11px; color: #666;">
+    <p style="margin: 14px 0 0; padding: 8px; background: var(--c-surface-2); border-radius: 4px; font-size: 11px; color: var(--c-text-muted);">
       📂 앱 데이터: <code>~/Library/Application Support/Sims4CCManager/</code> (Sims 4 폴더 안 건드림)
     </p>
 
@@ -1350,8 +1295,8 @@ HTML_PAGE = """<!DOCTYPE html>
 <dialog id="failed-dialog" style="max-width: 600px; width: 90vw;">
   <button class="dlg-close" onclick="document.getElementById('failed-dialog').close()">✕</button>
   <h3>⚠️ 일부 파일 이동 실패</h3>
-  <div id="failed-summary" style="color: #666; font-size: 13px; margin-bottom: 8px;"></div>
-  <div style="max-height: 300px; overflow-y: auto; margin: 8px 0; border: 1px solid #eee; border-radius: 6px; padding: 8px; background: #fafafa;">
+  <div id="failed-summary" style="color: var(--c-text-muted); font-size: 13px; margin-bottom: 8px;"></div>
+  <div style="max-height: 300px; overflow-y: auto; margin: 8px 0; border: 1px solid var(--c-border); border-radius: 6px; padding: 8px; background: var(--c-surface-2);">
     <div id="failed-list"></div>
   </div>
   <div style="display: flex; gap: 8px; justify-content: flex-end;">
@@ -1360,13 +1305,13 @@ HTML_PAGE = """<!DOCTYPE html>
 </dialog>
 <dialog id="trash-dialog" style="max-width: 720px; width: 90vw;">
   <button class="dlg-close" onclick="closeTrash()">✕</button>
-  <h3>휴지통 <span id="trash-summary" style="font-weight: normal; color: #666; font-size: 13px;"></span></h3>
+  <h3>휴지통 <span id="trash-summary" style="font-weight: normal; color: var(--c-text-muted); font-size: 13px;"></span></h3>
   <div style="display: flex; gap: 8px; margin: 8px 0; align-items: center;">
     <button onclick="trashSelectAll(true)">전체 선택</button>
     <button onclick="trashSelectAll(false)">전체 해제</button>
-    <span style="color:#666; font-size:12px;">선택: <b id="trash-selected-count">0</b>개</span>
+    <span style="color:var(--c-text-muted); font-size:12px;">선택: <b id="trash-selected-count">0</b>개</span>
   </div>
-  <div style="max-height: 60vh; overflow-y: auto; margin: 8px 0; border: 1px solid #eee; border-radius: 6px; padding: 8px; background: #fafafa;">
+  <div style="max-height: 60vh; overflow-y: auto; margin: 8px 0; border: 1px solid var(--c-border); border-radius: 6px; padding: 8px; background: var(--c-surface-2);">
     <div id="trash-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px;"></div>
   </div>
   <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
@@ -1624,7 +1569,7 @@ function render() {
     main.innerHTML = `<div class="progress" style="padding:40px;">
       <div style="font-size:48px;margin-bottom:12px;">👋</div>
       <h2 style="margin:0 0 8px 0;">환영합니다!</h2>
-      <div style="color:#666;margin-bottom:20px;">Mods 폴더에서 아직 CC를 스캔하지 않았어요.<br>아래 버튼을 눌러 시작해 보세요.</div>
+      <div style="color:var(--c-text-muted);margin-bottom:20px;">Mods 폴더에서 아직 CC를 스캔하지 않았어요.<br>아래 버튼을 눌러 시작해 보세요.</div>
       <button class="blue" style="font-size:14px;padding:10px 20px;" onclick="rescan()">🔄 스캔 시작</button>
     </div>`;
     updateFooter();
@@ -2294,7 +2239,7 @@ function showScanOverlay(show) {
     ov.innerHTML = `<div style="background:white;padding:32px;border-radius:10px;min-width:360px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);">
       <div style="font-size:32px;margin-bottom:8px;">🔄</div>
       <h3 style="margin:0 0 12px 0;">CC 스캔 중...</h3>
-      <div id="scanOvName" style="color:#666;font-size:12px;margin-bottom:10px;word-break:break-all;min-height:16px;">준비 중...</div>
+      <div id="scanOvName" style="color:var(--c-text-muted);font-size:12px;margin-bottom:10px;word-break:break-all;min-height:16px;">준비 중...</div>
       <div class="progress-bar" style="margin-top:6px;"><div id="scanOvBar" style="width:0%"></div></div>
       <div id="scanOvCount" style="margin-top:8px;font-size:12px;color:#888;">0 / 0</div>
     </div>`;
@@ -2375,9 +2320,9 @@ function showFailedDialog(movedCount, missingCount, errors) {
   const summary = `이동 성공: ${movedCount}개 · 이미 삭제된 파일 정리: ${missingCount}개 · 실패: ${errors.length}개`;
   document.getElementById('failed-summary').textContent = summary;
   document.getElementById('failed-list').innerHTML = errors.map(e => `
-    <div style="padding: 6px; border-bottom: 1px solid #eee; font-size: 12px;">
+    <div style="padding: 6px; border-bottom: 1px solid var(--c-border); font-size: 12px;">
       <div style="color: #d9534f; font-weight: 600;">${escapeHtml(e.reason)}</div>
-      <div style="color: #666; margin-top: 2px; word-break: break-all;">${escapeHtml(e.path)}</div>
+      <div style="color: var(--c-text-muted); margin-top: 2px; word-break: break-all;">${escapeHtml(e.path)}</div>
     </div>
   `).join('');
   document.getElementById('failed-dialog').showModal();
@@ -2486,7 +2431,7 @@ async function postBulkAction() {
   const showHist = () => {
     const arr = loadHist();
     if (!arr.length || s.value) { hist.style.display = 'none'; return; }
-    let html = '<div style="padding:6px 10px; font-size:11px; color:#888; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee;"><span>🕒 최근 검색</span><span onmousedown="event.preventDefault(); window._ccmClearHist()" style="cursor:pointer; color:#999; font-size:11px;">전체 지우기</span></div>';
+    let html = '<div style="padding:6px 10px; font-size:11px; color:var(--c-text-label); display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--c-border);"><span>🕒 최근 검색</span><span onmousedown="event.preventDefault(); window._ccmClearHist()" style="cursor:pointer; color:var(--c-text-subtle); font-size:11px;">전체 지우기</span></div>';
     html += arr.map(q => `<div class="hist-item" data-q="${escapeHtml(q)}" style="padding:6px 10px; cursor:pointer; font-size:12px; display:flex; justify-content:space-between; align-items:center;"><span>${escapeHtml(q)}</span><span onmousedown="event.preventDefault(); event.stopPropagation(); window._ccmRemoveHist('${escapeAttr(q)}')" style="opacity:.5; cursor:pointer; padding:0 4px;">✕</span></div>`).join('');
     hist.innerHTML = html;
     hist.style.display = 'block';
@@ -2775,25 +2720,25 @@ async function openStats() {
     <button class="dlg-close" onclick="this.parentElement.close()">✕</button>
     <h2 style="margin:0 0 12px 0;">📊 통계</h2>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">전체 파일</div><div style="font-size:20px;font-weight:600;">${s.total_files.toLocaleString()}</div></div>
-      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">전체 용량</div><div style="font-size:20px;font-weight:600;">${human(s.total_size)}</div></div>
-      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">폴더/창작자</div><div style="font-size:20px;font-weight:600;">${s.creator_count}</div></div>
-      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">수동 카테고리</div><div style="font-size:20px;font-weight:600;">${s.overrides_count}</div></div>
-      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">휴지통</div><div style="font-size:14px;">${s.trash_count}개 · ${human(s.trash_size)}</div></div>
-      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">최신 / 최고령</div><div style="font-size:12px;">${fmtDate(s.newest_mtime)}<br>${fmtDate(s.oldest_mtime)}</div></div>
-      <div style="padding:10px;background:#f7f7f7;border-radius:6px;"><div style="font-size:11px;color:#666;">평균 크기 / 썸네일</div><div style="font-size:12px;">${human(s.avg_size||0)}<br>${(s.total_thumbs||0).toLocaleString()}개</div></div>
+      <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">전체 파일</div><div style="font-size:20px;font-weight:600;">${s.total_files.toLocaleString()}</div></div>
+      <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">전체 용량</div><div style="font-size:20px;font-weight:600;">${human(s.total_size)}</div></div>
+      <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">폴더/창작자</div><div style="font-size:20px;font-weight:600;">${s.creator_count}</div></div>
+      <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">수동 카테고리</div><div style="font-size:20px;font-weight:600;">${s.overrides_count}</div></div>
+      <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">휴지통</div><div style="font-size:14px;">${s.trash_count}개 · ${human(s.trash_size)}</div></div>
+      <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">최신 / 최고령</div><div style="font-size:12px;">${fmtDate(s.newest_mtime)}<br>${fmtDate(s.oldest_mtime)}</div></div>
+      <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">평균 크기 / 썸네일</div><div style="font-size:12px;">${human(s.avg_size||0)}<br>${(s.total_thumbs||0).toLocaleString()}개</div></div>
     </div>
     <h3 style="margin:8px 0;font-size:14px;">🏆 창작자 Top 10 (용량 기준)</h3>
     <div style="margin-bottom:16px;">
       ${(s.top_creators || []).map(c => `
         <div style="margin:4px 0;">
-          <div style="display:flex;justify-content:space-between;font-size:12px;"><span>${escapeHtml(c.name)}</span><span style="color:#666;">${c.count}개 · ${human(c.size)}</span></div>
-          <div style="height:6px;background:#eee;border-radius:3px;overflow:hidden;"><div style="height:100%;background:#4a90e2;width:${(c.size/maxSz*100).toFixed(1)}%;"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span>${escapeHtml(c.name)}</span><span style="color:var(--c-text-muted);">${c.count}개 · ${human(c.size)}</span></div>
+          <div style="height:6px;background:var(--c-border-strong);border-radius:3px;overflow:hidden;"><div style="height:100%;background:#4a90e2;width:${(c.size/maxSz*100).toFixed(1)}%;"></div></div>
         </div>`).join('')}
     </div>
     <h3 style="margin:8px 0;font-size:14px;">🏷️ 카테고리 분포</h3>
     <div style="display:flex;flex-wrap:wrap;gap:6px;">
-      ${(s.categories || []).map(c => `<span style="padding:4px 8px;background:#f0f0f0;border-radius:12px;font-size:12px;">${escapeHtml(c.name)} <b>${c.count}</b> <span style="color:#888;">(${human(c.size)})</span></span>`).join('')}
+      ${(s.categories || []).map(c => `<span style="padding:4px 8px;background:var(--c-surface-2);color:var(--c-text);border-radius:12px;font-size:12px;">${escapeHtml(c.name)} <b>${c.count}</b> <span style="color:var(--c-text-subtle);">(${human(c.size)})</span></span>`).join('')}
     </div>`;
   dlg.showModal();
 }
