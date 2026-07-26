@@ -1408,7 +1408,7 @@ function render() {
         ? () => toast('❌ 완전삭제된 파일입니다 (되돌릴 수 없음)')
         : it.trashed
         ? async () => {
-            if (!confirm(`휴지통에서 복원할까요?\\n${it.file}`)) return;
+            if (!(await customConfirm(`휴지통에서 복원할까요?\\n${it.file}`, {okText:'복원'}))) return;
             const res = await fetch('/api/restore', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
@@ -1690,8 +1690,8 @@ function updateFooter() {
 }
 
 function showOnlyMarked() { showMarkedOnly = !showMarkedOnly; render(); }
-function clearMarks() {
-  if (!confirm('모든 표시를 초기화할까요?')) return;
+async function clearMarks() {
+  if (!(await customConfirm('모든 표시를 초기화할까요?', {okText:'초기화', danger:true}))) return;
   for (const k of Object.keys(state)) delete state[k];
   saveMarks();
   render();
@@ -1741,8 +1741,8 @@ function unmarkFromDialog(path) {
   if (remaining === 0) document.getElementById('marked-dialog').close();
 }
 
-function clearMarksFromDialog() {
-  if (!confirm('삭제 표시 전체를 해제할까요?')) return;
+async function clearMarksFromDialog() {
+  if (!(await customConfirm('삭제 표시 전체를 해제할까요?', {okText:'해제', danger:true}))) return;
   for (const k of Object.keys(state)) delete state[k];
   saveMarks();
   document.getElementById('marked-dialog').close();
@@ -1757,7 +1757,7 @@ async function performDeleteFromDialog() {
 async function performDelete() {
   const paths = Object.keys(state);
   if (!paths.length) { toast('삭제 표시된 항목이 없어요.'); return; }
-  if (!confirm(`${paths.length}개 파일을 휴지통으로 이동할까요?\\n(휴지통에서 복원 가능해요)`)) return;
+  if (!(await customConfirm(`${paths.length}개 파일을 휴지통으로 이동할까요?\\n(휴지통에서 복원 가능해요)`, {okText:'이동', danger:true}))) return;
   const res = await fetch('/api/delete', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -1880,7 +1880,7 @@ async function restoreSelected() {
 }
 
 async function emptyTrash() {
-  if (!confirm('휴지통을 완전히 비울까요? 되돌릴 수 없어요.')) return;
+  if (!(await customConfirm('휴지통을 완전히 비울까요? 되돌릴 수 없어요.', {okText:'비우기', danger:true}))) return;
   const res = await fetch('/api/empty-trash', {method: 'POST'});
   const data = await res.json();
   toast(`✅ ${data.count}개 완전 삭제 (${human(data.size_freed)} 확보)`);
@@ -1890,7 +1890,7 @@ async function emptyTrash() {
 async function restoreAll() {
   const paths = [...document.querySelectorAll('#trash-list input')].map(el => el.value);
   if (!paths.length) { toast('휴지통이 비어있어요.'); return; }
-  if (!confirm(`${paths.length}개 파일 전체를 원위치로 복원할까요?`)) return;
+  if (!(await customConfirm(`${paths.length}개 파일 전체를 원위치로 복원할까요?`, {okText:'복원'}))) return;
   const res = await fetch('/api/restore', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -1904,7 +1904,7 @@ async function restoreAll() {
 async function deleteSelectedFromTrash() {
   const paths = [...document.querySelectorAll('#trash-list input:checked')].map(el => el.value);
   if (!paths.length) { toast('선택된 파일이 없어요.'); return; }
-  if (!confirm(`선택한 ${paths.length}개를 완전히 삭제할까요? 되돌릴 수 없어요.`)) return;
+  if (!(await customConfirm(`선택한 ${paths.length}개를 완전히 삭제할까요? 되돌릴 수 없어요.`, {okText:'완전 삭제', danger:true}))) return;
   const res = await fetch('/api/delete-from-trash', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -2185,6 +2185,44 @@ performDelete = async function() {
     pushUndo({type: 'delete', originalPaths, movedTrashPaths: originalPaths});
   }
 };
+
+// ─────── customConfirm ───────
+function customConfirm(message, opts) {
+  opts = opts || {};
+  const okText = opts.okText || '확인';
+  const cancelText = opts.cancelText || '취소';
+  const danger = !!opts.danger;
+  return new Promise((resolve) => {
+    let dlg = document.getElementById('customConfirmDlg');
+    if (!dlg) {
+      dlg = document.createElement('dialog');
+      dlg.id = 'customConfirmDlg';
+      dlg.style.cssText = 'min-width:300px;max-width:480px;';
+      document.body.appendChild(dlg);
+    }
+    dlg.innerHTML = `
+      <div id="ccMsg" style="white-space:pre-wrap;margin-bottom:16px;font-size:14px;line-height:1.5;"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="ccCancel" type="button">${escapeHtml(cancelText)}</button>
+        <button id="ccOk" type="button" class="${danger ? 'primary' : 'blue'}">${escapeHtml(okText)}</button>
+      </div>`;
+    dlg.querySelector('#ccMsg').textContent = message;
+    const close = (v) => {
+      dlg.removeEventListener('keydown', onKey);
+      try { dlg.close(); } catch {}
+      resolve(v);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); close(false); }
+      else if (e.key === 'Enter') { e.preventDefault(); close(true); }
+    };
+    dlg.addEventListener('keydown', onKey);
+    dlg.querySelector('#ccOk').onclick = () => close(true);
+    dlg.querySelector('#ccCancel').onclick = () => close(false);
+    dlg.showModal();
+    setTimeout(() => dlg.querySelector('#ccOk').focus(), 20);
+  });
+}
 
 loadManifest();
 </script>
