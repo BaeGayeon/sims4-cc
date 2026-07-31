@@ -633,16 +633,19 @@ def _find_thumbs_for(path):
     return []
 
 
-def _update_manifest_items(paths, updates):
-    """매니페스트의 특정 파일들에 필드 업데이트 (재스캔 없이 즉시 반영)."""
+def _update_manifest_items(paths, updates, per_item_updates=None):
+    """매니페스트의 특정 파일들에 필드 업데이트 (재스캔 없이 즉시 반영).
+    per_item_updates: {원본 path: {필드: 값}} — 항목별로 다른 값을 줘야 할 때 (예: trash_path)."""
     m = load_manifest()
     if not m: return
     path_set = set(paths)
-    trash_rel_set = set()  # 휴지통 안 상대 경로도 매칭용
+    per_item_updates = per_item_updates or {}
     for folder in m.get("folders", []) + m.get("creators", []):
         for it in folder.get("items", []):
             if it["path"] in path_set or it.get("trash_path") in path_set:
                 for k, v in updates.items():
+                    it[k] = v
+                for k, v in per_item_updates.get(it["path"], {}).items():
                     it[k] = v
     MANIFEST_PATH.write_text(json.dumps(m, ensure_ascii=False))
 
@@ -650,6 +653,7 @@ def _update_manifest_items(paths, updates):
 def move_to_trash(rel_paths):
     moved, failed = [], []
     trash_m = _load_trash_manifest()
+    trash_rel_by_original = {}
     for rel in rel_paths:
         src = MODS / rel
         if not src.exists():
@@ -671,12 +675,16 @@ def move_to_trash(rel_paths):
             trash_rel = str(dst.relative_to(TRASH_DIR))
             trash_m[trash_rel] = {"original_path": rel, "thumbs": thumbs, "size": dst.stat().st_size}
             moved.append(rel)
+            trash_rel_by_original[rel] = trash_rel
         except Exception as e:
             failed.append({"path": rel, "reason": str(e)})
     _save_trash_manifest(trash_m)
     # 매니페스트에 상태 반영 (재스캔 안 해도 목록에 표시됨)
     if moved:
-        _update_manifest_items(moved, {"trashed": True, "perma_deleted": False})
+        # 이름 충돌로 리네임된 경우 실제 휴지통 경로(trash_path)를 항목별로 저장해야
+        # 나중에 이 경로로 복원 요청을 보낼 수 있음
+        per_item = {rel: {"trash_path": trash_rel_by_original[rel]} for rel in moved}
+        _update_manifest_items(moved, {"trashed": True, "perma_deleted": False}, per_item_updates=per_item)
     return {"moved": moved, "failed": failed}
 
 
@@ -701,9 +709,9 @@ def restore_from_trash(rel_paths):
         except Exception as e:
             failed.append({"path": rel, "reason": str(e)})
     _save_trash_manifest(trash_m)
-    # 복원 → trashed 플래그 제거
+    # 복원 → trashed 플래그 제거, trash_path도 비워야 다음번 삭제 때 새 경로로 다시 채워짐
     if restored_originals:
-        _update_manifest_items(restored_originals, {"trashed": False, "perma_deleted": False})
+        _update_manifest_items(restored_originals, {"trashed": False, "perma_deleted": False, "trash_path": None})
     return {"restored": restored, "failed": failed}
 
 
@@ -767,7 +775,7 @@ def delete_from_trash(rel_paths):
                 pass
     _save_trash_manifest(trash_m)
     if perma_originals:
-        _update_manifest_items(perma_originals, {"trashed": False, "perma_deleted": True})
+        _update_manifest_items(perma_originals, {"trashed": False, "perma_deleted": True, "trash_path": None})
     return {"count": count, "size_freed": total}
 
 
@@ -790,7 +798,7 @@ def empty_trash():
     _save_trash_manifest({})
     # 매니페스트에 perma_deleted 반영
     if perma_originals:
-        _update_manifest_items(perma_originals, {"trashed": False, "perma_deleted": True})
+        _update_manifest_items(perma_originals, {"trashed": False, "perma_deleted": True, "trash_path": None})
     return {"count": count, "size_freed": total}
 
 
