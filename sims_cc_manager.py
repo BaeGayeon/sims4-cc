@@ -434,89 +434,97 @@ SCAN_PROGRESS = {"active": False, "current": 0, "total": 0, "name": ""}
 
 def scan_cc(progress_cb=None):
     """전체 Mods 폴더 스캔 → 폴더 경로별 그룹."""
-    if not MODS.exists():
-        return {"folders": [], "error": f"Mods 폴더 없음: {MODS}"}
+    # 스캔 도중 설정에서 Mods 경로가 바뀌어도(이 스캔 자체는) 시작 시점 경로 기준으로
+    # 끝까지 일관되게 진행 — 전역 MODS를 매 파일마다 다시 읽지 않음
+    mods_root = MODS
+    if not mods_root.exists():
+        return {"folders": [], "error": f"Mods 폴더 없음: {mods_root}"}
     SCAN_PROGRESS.update({"active": True, "current": 0, "total": 0, "name": "준비 중..."})
 
-    # 폴더별 파일 그룹핑 - key는 Mods 기준 상대 폴더 경로
-    from collections import defaultdict
-    groups = defaultdict(list)
-    all_pkgs = list(_iter_packages())
-    total_pkgs = len(all_pkgs)
-    total_thumbs = 0
-    overrides = _load_overrides()
+    try:
+        # 폴더별 파일 그룹핑 - key는 Mods 기준 상대 폴더 경로
+        from collections import defaultdict
+        groups = defaultdict(list)
+        all_pkgs = list(_iter_packages())
+        total_pkgs = len(all_pkgs)
+        total_thumbs = 0
+        overrides = _load_overrides()
 
-    for i, pkg in enumerate(all_pkgs, 1):
-        rel_pkg = pkg.relative_to(MODS)
-        folder = str(rel_pkg.parent) if rel_pkg.parent != Path(".") else "(최상위)"
-        SCAN_PROGRESS["current"] = i
-        SCAN_PROGRESS["total"] = total_pkgs
-        SCAN_PROGRESS["name"] = folder
-        if progress_cb and (i % 100 == 0 or i == total_pkgs):
-            progress_cb(i, total_pkgs, folder)
+        for i, pkg in enumerate(all_pkgs, 1):
+            rel_pkg = pkg.relative_to(mods_root)
+            folder = str(rel_pkg.parent) if rel_pkg.parent != Path(".") else "(최상위)"
+            SCAN_PROGRESS["current"] = i
+            SCAN_PROGRESS["total"] = total_pkgs
+            SCAN_PROGRESS["name"] = folder
+            if progress_cb and (i % 100 == 0 or i == total_pkgs):
+                progress_cb(i, total_pkgs, folder)
 
-        # 카테고리 결정
-        # 1) 수동 오버라이드 우선
-        rel_pkg_str = str(rel_pkg)
-        override_cat = overrides.get(rel_pkg_str)
-        if override_cat:
-            # 오버라이드 카테고리에 해당하는 아이콘 찾기
-            icon = "📝"
-            for name, ic, _ in CATEGORIES:
-                if name == override_cat:
-                    icon = ic; break
-            cats = [(override_cat, icon)]
-            is_override = True
-            is_casp = False
-        else:
-            is_override = False
-            casp_cat = get_casp_category(pkg)
-            if casp_cat:
-                cats = [casp_cat]
-                is_casp = True
-            else:
-                cats = categorize(pkg.name, pkg.stat().st_size)
+            # 카테고리 결정
+            # 1) 수동 오버라이드 우선
+            rel_pkg_str = str(rel_pkg)
+            override_cat = overrides.get(rel_pkg_str)
+            if override_cat:
+                # 오버라이드 카테고리에 해당하는 아이콘 찾기
+                icon = "📝"
+                for name, ic, _ in CATEGORIES:
+                    if name == override_cat:
+                        icon = ic; break
+                cats = [(override_cat, icon)]
+                is_override = True
                 is_casp = False
-            # 파일명에서 추가 카테고리도 병합 (필터용, primary는 첫 번째만)
-            fn_cats = categorize(pkg.name, pkg.stat().st_size)
-            for fc in fn_cats:
-                if fc[0] not in [c[0] for c in cats] and fc[0] != "기타":
-                    cats.append(fc)
+            else:
+                is_override = False
+                casp_cat = get_casp_category(pkg)
+                if casp_cat:
+                    cats = [casp_cat]
+                    is_casp = True
+                else:
+                    cats = categorize(pkg.name, pkg.stat().st_size)
+                    is_casp = False
+                # 파일명에서 추가 카테고리도 병합 (필터용, primary는 첫 번째만)
+                fn_cats = categorize(pkg.name, pkg.stat().st_size)
+                for fc in fn_cats:
+                    if fc[0] not in [c[0] for c in cats] and fc[0] != "기타":
+                        cats.append(fc)
 
-        stat = pkg.stat()
-        item = {
-            "file": pkg.name,
-            "path": rel_pkg_str,
-            "size": stat.st_size,
-            "mtime": stat.st_mtime,   # 파일 수정 시각 (최근순/오래된순 정렬용)
-            "thumbs": [],
-            "cats": [c[0] for c in cats],
-            "primary_cat": cats[0][0],
-            "cat_icon": cats[0][1],
-            "casp": is_casp,
-            "override": is_override,
+            stat = pkg.stat()
+            item = {
+                "file": pkg.name,
+                "path": rel_pkg_str,
+                "size": stat.st_size,
+                "mtime": stat.st_mtime,   # 파일 수정 시각 (최근순/오래된순 정렬용)
+                "thumbs": [],
+                "cats": [c[0] for c in cats],
+                "primary_cat": cats[0][0],
+                "cat_icon": cats[0][1],
+                "casp": is_casp,
+                "override": is_override,
+            }
+            for img_bytes, h, ext in extract_thumbs(pkg):
+                thumb_name = f"{h[:16]}{ext}"
+                thumb_path = THUMBS_DIR / thumb_name
+                if not thumb_path.exists():
+                    thumb_path.write_bytes(img_bytes)
+                item["thumbs"].append(thumb_name)
+                total_thumbs += 1
+            groups[folder].append(item)
+
+        folders = [{"name": name, "items": sorted(items, key=lambda x: x["file"])}
+                   for name, items in sorted(groups.items())]
+
+        manifest = {
+            "folders": folders,
+            "creators": folders,  # 하위호환 alias
+            "total_pkgs": total_pkgs,
+            "total_thumbs": total_thumbs,
         }
-        for img_bytes, h, ext in extract_thumbs(pkg):
-            thumb_name = f"{h[:16]}{ext}"
-            thumb_path = THUMBS_DIR / thumb_name
-            if not thumb_path.exists():
-                thumb_path.write_bytes(img_bytes)
-            item["thumbs"].append(thumb_name)
-            total_thumbs += 1
-        groups[folder].append(item)
-
-    folders = [{"name": name, "items": sorted(items, key=lambda x: x["file"])}
-               for name, items in sorted(groups.items())]
-
-    manifest = {
-        "folders": folders,
-        "creators": folders,  # 하위호환 alias
-        "total_pkgs": total_pkgs,
-        "total_thumbs": total_thumbs,
-    }
-    MANIFEST_PATH.write_text(json.dumps(manifest, ensure_ascii=False))
-    SCAN_PROGRESS.update({"active": False, "current": total_pkgs, "total": total_pkgs, "name": "완료"})
-    return manifest
+        MANIFEST_PATH.write_text(json.dumps(manifest, ensure_ascii=False))
+        SCAN_PROGRESS.update({"current": total_pkgs, "total": total_pkgs, "name": "완료"})
+        return manifest
+    finally:
+        # 도중에 예외가 나거나(예: 파싱 오류) Mods 경로가 바뀌어도 진행률 상태가
+        # active=True로 영원히 멈춰서 프론트 폴링이 끝없이 도는 일이 없도록 보장
+        SCAN_PROGRESS["active"] = False
 
 
 def load_manifest():
@@ -2958,6 +2966,9 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/api/restore":
             self._json(restore_from_trash(data.get("paths", [])))
         elif path == "/api/config":
+            if SCAN_PROGRESS["active"]:
+                self._json({"ok": False, "error": "스캔 중에는 경로를 바꿀 수 없어요. 스캔이 끝난 뒤 다시 시도해 주세요."})
+                return
             new_path = data.get("mods_root", "").strip()
             if not new_path:
                 self._json({"ok": False, "error": "경로가 비어있음"})
