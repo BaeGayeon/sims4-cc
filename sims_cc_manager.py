@@ -685,7 +685,7 @@ def move_to_trash(rel_paths):
         # 나중에 이 경로로 복원 요청을 보낼 수 있음
         per_item = {rel: {"trash_path": trash_rel_by_original[rel]} for rel in moved}
         _update_manifest_items(moved, {"trashed": True, "perma_deleted": False}, per_item_updates=per_item)
-    return {"moved": moved, "failed": failed}
+    return {"moved": moved, "failed": failed, "moved_trash_paths": trash_rel_by_original}
 
 
 def restore_from_trash(rel_paths):
@@ -2243,6 +2243,7 @@ async function performDelete() {
     toast(`✅ ${data.moved.length}개 이동됨`);
   }
   await loadManifest();
+  return data;
 }
 
 async function rescan() {
@@ -2696,14 +2697,11 @@ applyToPaths = async function(paths, category) {
 // 삭제도 undo 추적
 const _origPerformDelete = performDelete;
 performDelete = async function() {
-  const originalPaths = Object.keys(state);
-  await _origPerformDelete();
-  // 잘 이동된 것들만 undo 스택에 저장
-  // (이미 loadManifest 후라 정보 얻으려면 별도 처리 필요)
-  // 간단하게: 다시 스캔해서 trashPaths를 얻거나 API 응답에서 얻는 방식
-  // 여기서는 originalPaths를 저장하고 restore 시 그대로 요청
-  if (originalPaths.length) {
-    pushUndo({type: 'delete', originalPaths, movedTrashPaths: originalPaths});
+  const data = await _origPerformDelete();
+  // 취소되었거나 아무것도 못 옮겼으면 undo에 남기지 않음 (실제로 옮겨진 것만 기록)
+  if (data && data.moved && data.moved.length) {
+    const movedTrashPaths = data.moved.map(p => (data.moved_trash_paths || {})[p] || p);
+    pushUndo({type: 'delete', originalPaths: data.moved, movedTrashPaths});
   }
 };
 
