@@ -597,6 +597,19 @@ def _compute_stats():
     }
 
 
+def _safe_path(root, rel):
+    """rel이 root 밖으로 벗어나지 않도록 강제. 벗어나면(경로 순회 시도 등) None 반환."""
+    if not rel:
+        return None
+    try:
+        root_resolved = root.resolve()
+        candidate = (root / rel).resolve()
+        candidate.relative_to(root_resolved)
+    except (OSError, ValueError):
+        return None
+    return candidate
+
+
 def set_category_override(rel_path, category):
     """수동으로 카테고리 지정 (또는 해제)"""
     overrides = _load_overrides()
@@ -655,8 +668,8 @@ def move_to_trash(rel_paths):
     trash_m = _load_trash_manifest()
     trash_rel_by_original = {}
     for rel in rel_paths:
-        src = MODS / rel
-        if not src.exists():
+        src = _safe_path(MODS, rel)
+        if not src or not src.exists():
             failed.append({"path": rel, "reason": "파일 없음"})
             continue
         thumbs = _find_thumbs_for(rel)
@@ -693,11 +706,11 @@ def restore_from_trash(rel_paths):
     restored_originals = []
     trash_m = _load_trash_manifest()
     for rel in rel_paths:
-        src = TRASH_DIR / rel
+        src = _safe_path(TRASH_DIR, rel)
         info = trash_m.get(rel, {})
         original = info.get("original_path", rel)
-        dst = MODS / original
-        if not src.exists():
+        dst = _safe_path(MODS, original)
+        if not src or not src.exists() or not dst:
             failed.append({"path": rel, "reason": "휴지통에 없음"})
             continue
         dst.parent.mkdir(parents=True, exist_ok=True)
@@ -762,8 +775,8 @@ def delete_from_trash(rel_paths):
     perma_originals = []
     trash_m = _load_trash_manifest()
     for rel in rel_paths:
-        fp = TRASH_DIR / rel
-        if fp.exists() and fp.is_file():
+        fp = _safe_path(TRASH_DIR, rel)
+        if fp and fp.exists() and fp.is_file():
             try:
                 total += fp.stat().st_size
                 fp.unlink()
@@ -2921,8 +2934,8 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path.startswith("/thumbs/"):
             name = path[len("/thumbs/"):]
-            fp = THUMBS_DIR / name
-            if fp.exists() and fp.is_file():
+            fp = _safe_path(THUMBS_DIR, name)
+            if fp and fp.exists() and fp.is_file():
                 mime = "image/png" if name.lower().endswith(".png") else "image/jpeg"
                 self._send(200, fp.read_bytes(), mime)
             else:
