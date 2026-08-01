@@ -364,24 +364,40 @@ def parse_casp_name(data):
         return None
 
 
-def get_casp_category(pkg_path):
-    """패키지의 첫 CASP를 파싱해서 카테고리 반환. 없으면 None."""
+def parse_package_casp_and_thumbs(pkg_path, need_casp=True):
+    """CASP 카테고리와 썸네일을 DBPF 인덱스 한 번만 순회해서 함께 추출.
+    (스캔 시 카테고리용/썸네일용으로 따로 parse_dbpf를 두 번 부르면 인덱스를 매번 다시 읽게 됨)"""
+    casp_category = None
+    thumbs = []
+    seen = set()
     for entry in parse_dbpf(pkg_path):
-        if entry["type"] != CASP_TYPE:
+        et = entry["type"]
+        want_casp = need_casp and et == CASP_TYPE and casp_category is None
+        want_thumb = et in THUMB_TYPES
+        if not want_casp and not want_thumb:
             continue
         try:
             data = read_resource(pkg_path, entry)
         except Exception:
             continue
-        name = parse_casp_name(data)
-        if not name:
-            continue
-        casp_type = extract_casp_type(name)
-        if casp_type:
-            lower_type = casp_type.lower()
-            if lower_type in CASP_TYPE_MAP:
-                return CASP_TYPE_MAP[lower_type]
-    return None
+        if want_casp:
+            name = parse_casp_name(data)
+            if name:
+                casp_type = extract_casp_type(name)
+                if casp_type and casp_type.lower() in CASP_TYPE_MAP:
+                    casp_category = CASP_TYPE_MAP[casp_type.lower()]
+        if want_thumb:
+            if data.startswith(b"\xff\xd8\xff"):
+                ext = ".jpg"
+            elif data.startswith(b"\x89PNG\r\n\x1a\n"):
+                ext = ".png"
+            else:
+                continue
+            h = hashlib.md5(data).hexdigest()
+            if h not in seen:
+                seen.add(h)
+                thumbs.append((data, h, ext))
+    return casp_category, thumbs
 
 
 def extract_thumbs(pkg_path):
@@ -472,9 +488,10 @@ def scan_cc(progress_cb=None):
                 cats = [(override_cat, icon)]
                 is_override = True
                 is_casp = False
+                _, thumb_list = parse_package_casp_and_thumbs(pkg, need_casp=False)
             else:
                 is_override = False
-                casp_cat = get_casp_category(pkg)
+                casp_cat, thumb_list = parse_package_casp_and_thumbs(pkg)
                 if casp_cat:
                     cats = [casp_cat]
                     is_casp = True
@@ -500,7 +517,7 @@ def scan_cc(progress_cb=None):
                 "casp": is_casp,
                 "override": is_override,
             }
-            for img_bytes, h, ext in extract_thumbs(pkg):
+            for img_bytes, h, ext in thumb_list:
                 thumb_name = f"{h[:16]}{ext}"
                 thumb_path = THUMBS_DIR / thumb_name
                 if not thumb_path.exists():
