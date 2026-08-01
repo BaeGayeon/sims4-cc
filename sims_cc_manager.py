@@ -646,6 +646,20 @@ def set_category_override(rel_path, category):
     return {"ok": True}
 
 
+def set_category_overrides_batch(rel_paths, category):
+    """여러 파일의 카테고리를 한 번에 지정 (또는 해제).
+    오버라이드 파일을 항목마다 따로 읽고 쓰지 않고 한 번만 읽고/병합하고/써서
+    n개 일괄 지정 시 디스크 I/O를 O(n)에서 O(1)로 줄임."""
+    overrides = _load_overrides()
+    for rel_path in rel_paths:
+        if category is None or category == "":
+            overrides.pop(rel_path, None)
+        else:
+            overrides[rel_path] = category
+    _save_overrides(overrides)
+    return {"ok": True}
+
+
 def _load_trash_manifest():
     if TRASH_MANIFEST_PATH.exists():
         try:
@@ -3031,8 +3045,7 @@ class Handler(BaseHTTPRequestHandler):
             # {paths: [...], category: "..."}
             paths = data.get("paths", [])
             cat = data.get("category")
-            for p in paths:
-                set_category_override(p, cat)
+            set_category_overrides_batch(paths, cat)
             # 매니페스트 즉시 반영
             m = load_manifest()
             if m:
