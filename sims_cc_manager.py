@@ -1370,7 +1370,6 @@ HTML_PAGE = """<!DOCTYPE html>
     <button class="chip-toggle" data-filter="tglDup" onclick="toggleChipFilter('tglDup')">중복 의심만</button>
     <button class="chip-toggle" data-filter="tglConflict" onclick="toggleChipFilter('tglConflict')">CAS 충돌만</button>
     <button class="chip-toggle" data-filter="tglHideTrashed" onclick="toggleChipFilter('tglHideTrashed')">휴지통 항목 숨기기</button>
-    <button class="chip-toggle on" data-filter="tglHidePerma" onclick="toggleChipFilter('tglHidePerma')">완전삭제 숨기기</button>
     <button class="chip-toggle" data-filter="tglCollapsed" onclick="toggleChipFilter('tglCollapsed')">모두 접기</button>
     <div class="divider"></div>
     <span class="label">용량(MB)</span>
@@ -1567,9 +1566,8 @@ let showConflictOnly = false;
 let sizeMinBytes = null;
 let sizeMaxBytes = null;
 let hideTrashed = false;
-let hidePerma = true;
 let editMode = 'delete';  // 'delete' | 'category'
-const FILTER_KEYS = ['tglMarked', 'tglOverride', 'tglUnreadable', 'tglDup', 'tglConflict', 'tglHideTrashed', 'tglHidePerma', 'tglCollapsed'];
+const FILTER_KEYS = ['tglMarked', 'tglOverride', 'tglUnreadable', 'tglDup', 'tglConflict', 'tglHideTrashed', 'tglCollapsed'];
 
 function applyFilterState(key, val) {
   if (key === 'tglMarked') showMarkedOnly = val;
@@ -1578,7 +1576,6 @@ function applyFilterState(key, val) {
   else if (key === 'tglDup') showDupOnly = val;
   else if (key === 'tglConflict') showConflictOnly = val;
   else if (key === 'tglHideTrashed') hideTrashed = val;
-  else if (key === 'tglHidePerma') hidePerma = val;
   else if (key === 'tglCollapsed') collapsedMode = val;
 }
 function setChipFilterUI(key, val) {
@@ -1847,7 +1844,7 @@ function render() {
   for (const c of creators) {
     let items = c.items.filter(it => {
       totalItems++;
-      if (hidePerma && it.perma_deleted) return false;
+      if (it.perma_deleted) return false;  // 완전삭제된 파일은 되돌릴 수 없어서 항상 숨김 (토글 없음)
       if (hideTrashed && it.trashed) return false;
       if (showMarkedOnly && !state[it.path]) return false;
       if (showOverrideOnly && !it.override) return false;
@@ -1935,9 +1932,8 @@ function render() {
       } else {
         thumbHtml = `<div class="no-thumb">썸네일 없음</div>`;
       }
-      const trashBadge = it.perma_deleted ? '<div class="trash-badge" style="background:rgba(60,0,0,.85);">완전삭제</div>'
-                        : it.trashed ? '<div class="trash-badge">휴지통</div>'
-                        : '';
+      // 완전삭제된 항목은 위에서 이미 걸러져서 여기까지 안 옴 (항상 숨김)
+      const trashBadge = it.trashed ? '<div class="trash-badge">휴지통</div>' : '';
       const cornerFlags = [];
       if (it.unreadable) {
         cornerFlags.push(`<div class="unreadable-badge" title="${escapeHtml('읽기 실패: ' + (it.unreadable_reason || '알 수 없는 오류'))}">⚠️ 읽기 실패</div>`);
@@ -1960,9 +1956,8 @@ function render() {
       const needsPopover = it.file.length > 44;
       const nameFull = needsPopover ? `<div class="name-full">${escapeHtml(it.file)}</div>` : '';
       div.innerHTML = `<div class="thumb-frame">${thumbHtml}${trashBadge}${catPill}<div class="sel-badge">✓</div><div class="sz">${human(it.size)}</div>${cornerBadgesHtml}${zoomBtnHtml}</div>${creatorSubtitle}<div class="name">${escapeHtml(it.file)}</div>${nameFull}`;
-      const clickHandler = it.perma_deleted
-        ? () => toast('❌ 완전삭제된 파일입니다 (되돌릴 수 없음)')
-        : it.trashed
+      // (완전삭제 항목은 항상 걸러지므로 별도 분기 없음)
+      const clickHandler = it.trashed
         ? async () => {
             if (!(await customConfirm(`휴지통에서 복원할까요?\\n${it.file}`, {okText:'복원'}))) return;
             const res = await fetch('/api/restore', {
@@ -2065,8 +2060,13 @@ function resetFilters() {
   const s = document.getElementById('search'); if (s) s.value = '';
   setChipFilterUI('tglMarked', false);
   setChipFilterUI('tglOverride', false);
+  setChipFilterUI('tglUnreadable', false);
+  setChipFilterUI('tglDup', false);
+  setChipFilterUI('tglConflict', false);
   setChipFilterUI('tglHideTrashed', false);
-  setChipFilterUI('tglHidePerma', false);
+  sizeMinBytes = null; sizeMaxBytes = null;
+  const minEl = document.getElementById('sizeMin'); if (minEl) minEl.value = '';
+  const maxEl = document.getElementById('sizeMax'); if (maxEl) maxEl.value = '';
   updateFilterBadge();
   render();
 }
