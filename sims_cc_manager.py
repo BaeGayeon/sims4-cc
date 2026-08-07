@@ -1408,7 +1408,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <input type="text" id="pathInput" placeholder="예: ~/Documents/Electronic Arts/The Sims 4/Mods" style="flex:1; padding: 5px 8px; font-size: 12px;">
         <button onclick="savePath()" class="blue">저장</button>
       </div>
-      <div style="font-size: 11px; color: #888; margin-top: 4px;">Sims 4 게임 폴더를 넣어도 안의 Mods를 자동으로 찾아요 · 경로 변경 후 재스캔 필요</div>
+      <div style="font-size: 11px; color: #888; margin-top: 4px;">Sims 4 게임 폴더를 넣어도 안의 Mods를 자동으로 찾아요 · 저장하면 자동으로 재스캔돼요</div>
     </div>
     <div>
       <label style="font-weight: 600; font-size: 13px;">🏷️ 카테고리 지정 백업</label>
@@ -2219,7 +2219,7 @@ function showNameCopyMenu(event, item, creatorName) {
   const opts = [
     {label: '파일명 복사 (확장자 제외)', val: clean, hint: '기본'},
     {label: '전체 파일명 복사 (.package 포함)', val: item.file},
-    {label: '창작자 복사', val: creatorName || '(폴더 없음)'},
+    {label: '폴더명 복사', val: creatorName || '(폴더 없음)'},
     {label: '카테고리 복사', val: (item.cats || [item.primary_cat || '기타']).join(', ')},
     {label: '경로 복사', val: item.path},
   ];
@@ -3041,7 +3041,7 @@ async function openStats() {
       <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">중복 의심</div><div style="font-size:20px;font-weight:600;">${s.dup_count || 0}</div></div>
       <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">CAS 충돌</div><div style="font-size:20px;font-weight:600;${s.conflict_count ? 'color:var(--c-red);' : ''}">${s.conflict_count || 0}</div></div>
     </div>
-    <h3 style="margin:8px 0;font-size:14px;">🏆 창작자 Top 10 (용량 기준)</h3>
+    <h3 style="margin:8px 0;font-size:14px;">🏆 폴더 Top 10 (용량 기준)</h3>
     <div style="margin-bottom:16px;">
       ${(s.top_creators || []).map(c => `
         <div style="margin:4px 0;">
