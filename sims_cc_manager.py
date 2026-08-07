@@ -483,6 +483,18 @@ def scan_cc(progress_cb=None):
     mods_root = MODS
     if not mods_root.exists():
         return {"folders": [], "error": f"Mods 폴더 없음: {mods_root}"}
+
+    # 재스캔 전후 비교용 — 이전 스캔에는 있었는데 이번엔 없어진 파일(제거됨) /
+    # 이전엔 없었는데 이번에 나타난 파일(신규)을 재스캔 완료 후 요약해서 보여주는 데 씀.
+    # 이미 휴지통으로 치운 파일은 Mods에서 사라지는 게 당연하므로 "제거됨" 집계에서 제외.
+    old_manifest = load_manifest()
+    old_paths = set()
+    if old_manifest:
+        for f in (old_manifest.get("folders") or old_manifest.get("creators") or []):
+            for it in f.get("items", []):
+                if not it.get("trashed") and not it.get("perma_deleted"):
+                    old_paths.add(it["path"])
+
     SCAN_PROGRESS.update({"active": True, "current": 0, "total": 0, "name": "준비 중..."})
 
     try:
@@ -591,6 +603,9 @@ def scan_cc(progress_cb=None):
         folders = [{"name": name, "items": sorted(items, key=lambda x: x["file"])}
                    for name, items in sorted(groups.items())]
 
+        new_paths = {it["path"] for items in groups.values() for it in items}
+        diff = {"added": len(new_paths - old_paths), "removed": len(old_paths - new_paths)}
+
         manifest = {
             "folders": folders,
             "creators": folders,  # 하위호환 alias
@@ -598,7 +613,7 @@ def scan_cc(progress_cb=None):
             "total_thumbs": total_thumbs,
         }
         MANIFEST_PATH.write_text(json.dumps(manifest, ensure_ascii=False))
-        SCAN_PROGRESS.update({"current": total_pkgs, "total": total_pkgs, "name": "완료"})
+        SCAN_PROGRESS.update({"current": total_pkgs, "total": total_pkgs, "name": "완료", "last_diff": diff})
         return manifest
     finally:
         # 도중에 예외가 나거나(예: 파싱 오류) Mods 경로가 바뀌어도 진행률 상태가
@@ -2500,10 +2515,18 @@ async function performDelete() {
 async function rescan() {
   showScanOverlay(true);
   await fetch('/api/scan', {method: 'POST'});
-  await pollScanProgress();
+  const finalProgress = await pollScanProgress();
   showScanOverlay(false);
   await loadManifest();
-  toast('✅ 재스캔 완료');
+  const diff = finalProgress && finalProgress.last_diff;
+  if (diff && (diff.added || diff.removed)) {
+    const parts = [];
+    if (diff.added) parts.push(`신규 ${diff.added}개`);
+    if (diff.removed) parts.push(`제거 ${diff.removed}개`);
+    toast(`✅ 재스캔 완료 (${parts.join(' · ')})`);
+  } else {
+    toast('✅ 재스캔 완료 (변경 없음)');
+  }
 }
 
 function showScanOverlay(show) {
@@ -2539,7 +2562,7 @@ async function pollScanProgress() {
           if (nameEl) nameEl.textContent = p.name || '';
           if (cntEl) cntEl.textContent = `${p.current} / ${p.total}`;
         }
-        if (!p.active) { resolve(); return; }
+        if (!p.active) { resolve(p); return; }
       } catch {}
       setTimeout(tick, 300);
     };
