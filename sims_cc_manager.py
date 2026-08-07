@@ -30,6 +30,10 @@ elif sys.platform == "win32":
     APP_STATE = Path(_appdata) / "Sims4CCManager" if _appdata else Path.home() / "Sims4CCManager"
 else:  # Linux 등 — XDG 관례
     APP_STATE = Path.home() / ".local" / "share" / "Sims4CCManager"
+# 개발/데모용 오버라이드 — 실제 앱 데이터를 안 건드리고 격리된 상태로 띄우고 싶을 때
+# (예: 위키/README용 스크린샷을 가짜 데이터로 찍을 때). tools/screenshot-kit 참고.
+if os.environ.get("CC_MANAGER_APP_STATE"):
+    APP_STATE = Path(os.environ["CC_MANAGER_APP_STATE"])
 _CONFIG_PATH = APP_STATE / "config.json"
 
 
@@ -143,7 +147,7 @@ CASP_TYPE = 0x034AEECB
 THUMB_TYPES = {CAS_THUMB_TYPE, CAS_THUMB_MEDIUM, CAS_THUMB_LARGE,
                BUILDBUY_THUMB_TYPE, GENERIC_THUMB, PNG_TYPE}
 
-PORT = 8765
+PORT = int(os.environ.get("CC_MANAGER_PORT", 8765))
 
 # CASP 내부 이름 → 카테고리 매핑 (심즈4 스튜디오 규칙)
 # 예: "Hezeh_ymHair_..." 에서 "Hair" 추출
@@ -3498,7 +3502,8 @@ def run():
     print("종료하려면 Ctrl+C")
     print()
 
-    threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+    if not os.environ.get("CC_MANAGER_NO_AUTOOPEN"):
+        threading.Timer(0.8, lambda: webbrowser.open(url)).start()
     try:
         HTTPServer(("localhost", PORT), Handler).serve_forever()
     except KeyboardInterrupt:
