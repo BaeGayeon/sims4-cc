@@ -1129,6 +1129,9 @@ HTML_PAGE = """<!DOCTYPE html>
   .item.selected .sel-badge { display: flex; }
   .sel-badge { display: none; position: absolute; left: 5px; top: 5px; width: 17px; height: 17px; border-radius: 5px; background: var(--c-blue); color: #fff; font-size: 10px; font-weight: 700; align-items: center; justify-content: center; z-index: 3; }
   .item.kb-focus .thumb-frame { outline: 2px dashed var(--c-blue); outline-offset: 2px; }
+  /* 중복/충돌 팝오버에서 파일명 클릭 시 해당 위치로 스크롤 후 잠깐 반짝여서 어떤 건지 표시 */
+  @keyframes locateFlash { 0%, 100% { box-shadow: 0 0 0 0 rgba(47,111,208,0); } 20%, 60% { box-shadow: 0 0 0 4px var(--c-blue); } }
+  .item.locate-flash .thumb-frame { animation: locateFlash 1.3s ease; }
   .chip.drop-target { background: #ffe066 !important; color: #333 !important; border-color: #f0a500 !important; transform: scale(1.1); }
   .item.dragging { opacity: 0.4; }
   body { padding-bottom: 66px; }
@@ -1138,7 +1141,9 @@ HTML_PAGE = """<!DOCTYPE html>
   .trash-badge { position: absolute; top: 5px; left: 5px; background: rgba(20,19,18,.72); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; z-index: 3; }
   /* 하단 중앙의 썸네일 넘기기 화살표(.thumb-nav)와 겹치지 않게 우상단(카테고리 필 아래)에 배치 */
   .corner-badges { position: absolute; right: 5px; top: 26px; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; z-index: 3; }
-  .unreadable-badge, .dup-badge, .conflict-badge { border: none; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 600; font-family: inherit; }
+  /* height를 명시 안 하면 전역 button 규칙의 32px 고정 높이가 이겨서 배지가 텍스트보다
+     훨씬 두꺼워 보였음 — 패딩만큼만 차지하도록 auto로 되돌림 */
+  .unreadable-badge, .dup-badge, .conflict-badge { height: auto; line-height: 1.4; border: none; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 600; font-family: inherit; }
   .unreadable-badge { background: rgba(178,60,43,.88); cursor: help; }
   .dup-badge { background: rgba(178,130,20,.88); cursor: pointer; }
   .conflict-badge { background: rgba(150,40,140,.88); cursor: pointer; }
@@ -1151,7 +1156,7 @@ HTML_PAGE = """<!DOCTYPE html>
   .path-list-popover { position: absolute; background: var(--c-surface); border: 1px solid var(--c-border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 30; width: 340px; max-width: 92vw; display: none; overflow: hidden; }
   .plp-header { padding: 10px 13px; border-bottom: 1px solid var(--c-border); font-size: 11.5px; font-weight: 600; color: var(--c-text); line-height: 1.5; }
   .plp-list { max-height: 260px; overflow-y: auto; padding: 6px; }
-  .plp-item { padding: 6px 8px; border-radius: 6px; font-size: 11.5px; color: var(--c-text-muted); word-break: break-all; font-family: ui-monospace, Menlo, monospace; }
+  .plp-item { padding: 6px 8px; border-radius: 6px; font-size: 11.5px; color: var(--c-text-muted); word-break: break-all; font-family: ui-monospace, Menlo, monospace; cursor: pointer; }
   .plp-item:hover { background: var(--c-bg); color: var(--c-text); }
   /* 카테고리 텍스트 뱃지: 썸네일 우상단 흰 알약 */
   .cat-pill { position: absolute; right: 5px; top: 5px; font-size: 9px; font-weight: 600; color: var(--c-text-muted); background: var(--c-overlay); border-radius: 9px; padding: 2px 6px; box-shadow: 0 1px 2px rgba(0,0,0,.12); z-index: 2; cursor: context-menu; max-width: 78%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1186,13 +1191,13 @@ HTML_PAGE = """<!DOCTYPE html>
   .thumb-btn { background: rgba(255,255,255,.2); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 9px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .thumb-btn:hover { background: rgba(255,255,255,.4); }
   .thumb-counter { color: white; padding: 0 4px; font-size: 9px; font-variant-numeric: tabular-nums; }
-  /* 확대 보기 버튼: 썸네일 상단 중앙 (다른 코너 뱃지들과 안 겹침), 호버 시에만 표시 */
-  .zoom-btn { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); background: rgba(20,19,18,.72); color: white; border: none; border-radius: 12px; width: 24px; height: 22px; font-size: 12px; padding: 0; cursor: zoom-in; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 4; }
+  /* 확대 보기 버튼: 썸네일 상단 중앙 (다른 코너 뱃지들과 안 겹침), 호버 시에만 표시.
+     클릭이 잘 안 된다는 피드백으로 히트 영역을 조금 더 키움 */
+  .zoom-btn { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); background: rgba(20,19,18,.72); color: white; border: none; border-radius: 13px; width: 30px; height: 26px; font-size: 13px; padding: 0; cursor: zoom-in; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 4; }
   .item:hover .zoom-btn { opacity: 1; pointer-events: auto; }
   .zoom-btn:hover { background: rgba(20,19,18,.9); }
-  /* 전역 "dialog { position: relative }" 규칙이 네이티브 모달의 화면 중앙 고정을 깨서
-     스크롤을 내린 채로 열면 안 보이던 문제 — 클래스 선택자로 우선순위를 높여 되돌림 */
-  .lightbox-dialog { position: fixed; max-width: 92vw; max-height: 92vh; background: transparent; border: none; padding: 0; overflow: visible; }
+  /* 화면 중앙 고정은 네이티브 dialog:modal 기본 동작 그대로 사용 (아래 dialog{position:relative} 제거함) */
+  .lightbox-dialog { max-width: 92vw; max-height: 92vh; background: transparent; border: none; padding: 0; overflow: visible; }
   .lightbox-dialog::backdrop { background: rgba(0,0,0,.8); }
   .lightbox-dialog .dlg-close { color: #fff; background: rgba(255,255,255,.12); top: -10px; right: -10px; }
   /* width를 명시해야 원본이 작은 썸네일도 실제로 확대돼서 보임 (max-width만 있으면 원본 크기 그대로 뜸) */
@@ -1237,7 +1242,10 @@ HTML_PAGE = """<!DOCTYPE html>
   .dlg-close { position: absolute; top: 14px; right: 14px; width: 26px; height: 26px; padding: 0; font-size: 13px; border-radius: 50%; background: transparent; border: none; color: var(--c-text-muted); cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; }
   kbd { background: var(--c-surface-2); color: var(--c-text); border: 1px solid var(--c-border-strong); border-bottom-width: 2px; border-radius: 3px; padding: 1px 6px; font-size: 11px; font-family: -apple-system, monospace; }
   .dlg-close:hover { background: var(--c-bg); color: var(--c-text); }
-  dialog { position: relative; }
+  /* 예전엔 여기 "dialog { position: relative }"가 있었는데, 네이티브 dialog:modal의
+     화면 중앙 고정(position:fixed)을 깨서 스크롤을 내린 채로 모달을 열면 안 보이고
+     맨 위로 스크롤해야만 보이는 문제(휴지통 등)의 원인이었음. dialog는 이미 기본값이
+     absolute라 .dlg-close 위치잡기엔 필요 없던 규칙이라 제거함. */
   /* 삭제표시 목록 다이얼로그의 개별 아이템 "표시 해제" 버튼 - 카테고리 펄과 동일한 코너 배치 */
   .marked-remove-btn { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%; border: none; background: var(--c-overlay); color: var(--c-text-muted); font-size: 11px; padding: 0; cursor: pointer; z-index: 4; box-shadow: 0 1px 2px rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center; }
   .marked-remove-btn:hover { background: var(--c-red); color: #fff; }
@@ -1528,6 +1536,19 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
 </dialog>
 <script>
+// 일부 브라우저는 showModal() 시 닫기 버튼 등에 자동 포커스를 주면서 페이지를 맨 위로
+// 스크롤시킴 — 모든 다이얼로그(휴지통, 설정, 통계, 라이트박스...)에 공통으로 적용되도록
+// 프로토타입 레벨에서 한 번만 패치. 개별 openXxx() 함수마다 따로 처리할 필요 없음.
+(function () {
+  const nativeShowModal = HTMLDialogElement.prototype.showModal;
+  HTMLDialogElement.prototype.showModal = function () {
+    const scrollY = window.scrollY;
+    nativeShowModal.call(this);
+    window.scrollTo(0, scrollY);
+    requestAnimationFrame(() => window.scrollTo(0, scrollY));
+  };
+})();
+
 let MANIFEST = null;
 const state = JSON.parse(localStorage.getItem('cc-marks') || '{}');
 const bulkSel = new Set();  // 다중선택 (Cmd+클릭)
@@ -2360,6 +2381,20 @@ function closePathListPopover() {
   if (pop) pop.style.display = 'none';
   pathListPopoverAnchor = null;
 }
+// 팝오버 목록에서 파일명 클릭 → 그리드에서 해당 아이템으로 스크롤 + 잠깐 반짝임
+function locateItem(path) {
+  closePathListPopover();
+  const el = document.querySelector(`.item[data-path="${CSS.escape(path)}"]`);
+  if (!el) {
+    toast('⚠️ 지금 필터·검색 조건에 가려져 있어서 찾을 수 없어요');
+    return;
+  }
+  el.closest('.creator')?.classList.remove('collapsed');  // 접힌 폴더면 펼침
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.remove('locate-flash'); void el.offsetWidth;  // 재실행을 위해 리플로우 강제
+  el.classList.add('locate-flash');
+  setTimeout(() => el.classList.remove('locate-flash'), 1400);
+}
 function showPathListPopover(event, headerText, paths) {
   event.stopPropagation();
   const btn = event.currentTarget;
@@ -2375,8 +2410,11 @@ function showPathListPopover(event, headerText, paths) {
   pathListPopoverAnchor = btn;
   pop.innerHTML = `
     <div class="plp-header">${escapeHtml(headerText)}</div>
-    <div class="plp-list">${paths.map(p => `<div class="plp-item">${escapeHtml(p)}</div>`).join('')}</div>
+    <div class="plp-list">${paths.map(p => `<div class="plp-item" data-path="${escapeHtml(p)}" title="클릭하면 해당 파일로 이동">${escapeHtml(p)}</div>`).join('')}</div>
   `;
+  pop.querySelectorAll('.plp-item').forEach(el => {
+    el.addEventListener('click', () => locateItem(el.dataset.path));
+  });
   pop.style.display = 'block';
   // 클릭한 배지 근처에 앵커. absolute(문서 좌표) + scrollX/Y라서 스크롤해도 배지를 계속 따라다님
   const rect = btn.getBoundingClientRect();
@@ -2436,12 +2474,7 @@ function showLightbox(thumbs, idx, fileName) {
     dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
   }
   renderLightbox();
-  // showModal()이 닫기 버튼에 포커스를 주면서 일부 브라우저가 페이지를 맨 위로
-  // 스크롤시키는 경우가 있어서, 열기 직전 스크롤 위치를 붙잡아 뒀다가 되돌려줌
-  const scrollY = window.scrollY;
-  dlg.showModal();
-  window.scrollTo(0, scrollY);
-  requestAnimationFrame(() => window.scrollTo(0, scrollY));
+  dlg.showModal();  // 스크롤 위치 보존은 showModal 프로토타입 패치에서 공통 처리
 }
 function renderLightbox() {
   const { thumbs, idx, fileName } = lightboxState;
