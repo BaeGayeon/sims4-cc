@@ -2487,6 +2487,14 @@ async function postBulkAction() {
   const clearBtn = document.getElementById('searchClear');
   const hist = document.getElementById('searchHistory');
   const HIST_KEY = 'ccm_search_history';
+  // 타이핑마다 전체 목록을 다시 그리면 라이브러리가 클수록 버벅이므로
+  // 실제 렌더는 살짝 디바운스하고, 즉시 반응해야 하는 UI(지우기 버튼, 최근검색 숨김)만 바로 반영
+  let searchDebounceTimer = null;
+  const renderDebounced = () => {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(render, 150);
+  };
+  const renderNow = () => { clearTimeout(searchDebounceTimer); render(); };
   const loadHist = () => { try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch { return []; } };
   const saveHist = (q) => {
     if (!q) return;
@@ -2520,7 +2528,7 @@ async function postBulkAction() {
         currentFilter = s.value.toLowerCase();
         clearBtn.style.display = 'block';
         hist.style.display = 'none';
-        render();
+        renderNow();
       };
     });
   };
@@ -2528,14 +2536,14 @@ async function postBulkAction() {
     currentFilter = e.target.value.toLowerCase().trim();
     clearBtn.style.display = e.target.value ? 'block' : 'none';
     hist.style.display = 'none';
-    render();
+    renderDebounced();
   });
   s.addEventListener('focus', showHist);
   s.addEventListener('blur', () => { setTimeout(() => { hist.style.display = 'none'; }, 150); });
   s.addEventListener('change', () => saveHist(s.value.trim()));
   s.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveHist(s.value.trim()); });
   clearBtn.addEventListener('click', () => {
-    s.value = ''; currentFilter = ''; clearBtn.style.display = 'none'; render(); s.focus();
+    s.value = ''; currentFilter = ''; clearBtn.style.display = 'none'; renderNow(); s.focus();
   });
 })();
 document.getElementById('itemSortBy').addEventListener('change', e => {
