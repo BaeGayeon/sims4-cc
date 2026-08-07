@@ -1137,10 +1137,17 @@ HTML_PAGE = """<!DOCTYPE html>
   .item.perma-deleted .name, .item.perma-deleted .name-full { text-decoration: line-through; color: var(--c-text-subtle); }
   .trash-badge { position: absolute; top: 5px; left: 5px; background: rgba(20,19,18,.72); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; z-index: 3; }
   .corner-badges { position: absolute; right: 5px; bottom: 5px; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; z-index: 3; }
-  .unreadable-badge, .dup-badge, .conflict-badge { color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 600; cursor: help; }
-  .unreadable-badge { background: rgba(178,60,43,.88); }
-  .dup-badge { background: rgba(178,130,20,.88); }
-  .conflict-badge { background: rgba(150,40,140,.88); }
+  .unreadable-badge, .dup-badge, .conflict-badge { border: none; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 600; font-family: inherit; }
+  .unreadable-badge { background: rgba(178,60,43,.88); cursor: help; }
+  .dup-badge { background: rgba(178,130,20,.88); cursor: pointer; }
+  .conflict-badge { background: rgba(150,40,140,.88); cursor: pointer; }
+  .dup-badge:hover, .conflict-badge:hover { filter: brightness(1.12); }
+  /* 중복/충돌 배지 클릭 시 뜨는 파일 목록 팝오버 */
+  .path-list-popover { position: fixed; background: var(--c-surface); border: 1px solid var(--c-border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 30; width: 340px; max-width: 92vw; display: none; overflow: hidden; }
+  .plp-header { padding: 10px 13px; border-bottom: 1px solid var(--c-border); font-size: 11.5px; font-weight: 600; color: var(--c-text); line-height: 1.5; }
+  .plp-list { max-height: 260px; overflow-y: auto; padding: 6px; }
+  .plp-item { padding: 6px 8px; border-radius: 6px; font-size: 11.5px; color: var(--c-text-muted); word-break: break-all; font-family: ui-monospace, Menlo, monospace; }
+  .plp-item:hover { background: var(--c-bg); color: var(--c-text); }
   /* 카테고리 텍스트 뱃지: 썸네일 우상단 흰 알약 */
   .cat-pill { position: absolute; right: 5px; top: 5px; font-size: 9px; font-weight: 600; color: var(--c-text-muted); background: var(--c-overlay); border-radius: 9px; padding: 2px 6px; box-shadow: 0 1px 2px rgba(0,0,0,.12); z-index: 2; cursor: context-menu; max-width: 78%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cat-pill.override { background: #fff3c4; box-shadow: 0 0 0 1px #d4a017; }
@@ -1181,7 +1188,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .lightbox-dialog { max-width: 92vw; max-height: 92vh; background: transparent; border: none; padding: 0; overflow: visible; }
   .lightbox-dialog::backdrop { background: rgba(0,0,0,.8); }
   .lightbox-dialog .dlg-close { color: #fff; background: rgba(255,255,255,.12); top: -10px; right: -10px; }
-  .lightbox-img { display: block; max-width: 88vw; max-height: 82vh; margin: 0 auto; border-radius: 6px; background: #1a1a1a; }
+  /* width를 명시해야 원본이 작은 썸네일도 실제로 확대돼서 보임 (max-width만 있으면 원본 크기 그대로 뜸) */
+  .lightbox-img { display: block; width: min(85vw, 860px); max-height: 84vh; object-fit: contain; margin: 0 auto; border-radius: 6px; background: #1a1a1a; }
   .lightbox-caption { text-align: center; color: #fff; font-size: 12px; margin-top: 10px; opacity: .85; }
   .lightbox-nav { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.15); color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .lightbox-nav:hover { background: rgba(255,255,255,.3); }
@@ -1907,10 +1915,10 @@ function render() {
         cornerFlags.push(`<div class="unreadable-badge" title="${escapeHtml('읽기 실패: ' + (it.unreadable_reason || '알 수 없는 오류'))}">⚠️ 읽기 실패</div>`);
       }
       if (it.dup_paths && it.dup_paths.length) {
-        cornerFlags.push(`<div class="dup-badge" title="${escapeHtml('같은 썸네일을 쓰는 다른 파일 ' + it.dup_count + '개:\\n' + it.dup_paths.slice(0, 5).join('\\n') + (it.dup_count > 5 ? `\\n...외 ${it.dup_count - 5}개` : ''))}">👯 중복 의심</div>`);
+        cornerFlags.push(`<button type="button" class="dup-badge" title="클릭해서 목록 보기">👯 중복 의심</button>`);
       }
       if (it.conflict_paths && it.conflict_paths.length) {
-        cornerFlags.push(`<div class="conflict-badge" title="${escapeHtml('같은 CAS 파츠를 정의하는 다른 파일 ' + it.conflict_count + '개 (로드 순서에 따라 하나가 다른 하나를 덮어씀):\\n' + it.conflict_paths.slice(0, 5).join('\\n') + (it.conflict_count > 5 ? `\\n...외 ${it.conflict_count - 5}개` : ''))}">⚡ CAS 충돌</div>`);
+        cornerFlags.push(`<button type="button" class="conflict-badge" title="클릭해서 목록 보기">⚡ CAS 충돌</button>`);
       }
       const cornerBadgesHtml = cornerFlags.length ? `<div class="corner-badges">${cornerFlags.join('')}</div>` : '';
       const zoomBtnHtml = it.thumbs.length ? `<button type="button" class="zoom-btn" onclick="openLightbox(event, this)" title="확대 보기">🔍</button>` : '';
@@ -1952,6 +1960,10 @@ function render() {
       div.querySelector('.thumb-img')?.addEventListener('click', clickHandler);
       div.querySelector('.no-thumb')?.addEventListener('click', clickHandler);
       div.querySelector('.sz').addEventListener('click', clickHandler);
+      div.querySelector('.dup-badge')?.addEventListener('click', (e) =>
+        showPathListPopover(e, `👯 같은 썸네일을 쓰는 파일 ${it.dup_count}개`, it.dup_paths));
+      div.querySelector('.conflict-badge')?.addEventListener('click', (e) =>
+        showPathListPopover(e, `⚡ 같은 CAS 파츠를 정의하는 파일 ${it.conflict_count}개 (로드 순서에 따라 하나가 다른 하나를 덮어씀)`, it.conflict_paths));
       // 이름 클릭 = 파일명 복사 (확장자 제외) - 검색용
       const nameEl = div.querySelector('.name');
       const nameFullEl = div.querySelector('.name-full');
@@ -2333,6 +2345,40 @@ document.addEventListener('click', (e) => {
   if (!menu.contains(e.target)) menu.style.display = 'none';
 });
 
+// 중복 의심 / CAS 충돌 배지 클릭 시 겹치는 파일 전체 목록을 보여주는 팝오버
+// (title 툴팁은 5개까지만 잘려 보이고 hover로만 뜨는 게 불편해서 클릭형 패널로 교체)
+function showPathListPopover(event, headerText, paths) {
+  event.stopPropagation();
+  let pop = document.getElementById('pathListPopover');
+  if (!pop) {
+    pop = document.createElement('div');
+    pop.id = 'pathListPopover';
+    pop.className = 'path-list-popover';
+    document.body.appendChild(pop);
+  }
+  pop.innerHTML = `
+    <div class="plp-header">${escapeHtml(headerText)}</div>
+    <div class="plp-list">${paths.map(p => `<div class="plp-item">${escapeHtml(p)}</div>`).join('')}</div>
+  `;
+  pop.style.display = 'block';
+  // 클릭한 배지 근처에 앵커, 화면 밖으로 안 나가게 보정
+  const rect = event.currentTarget.getBoundingClientRect();
+  const w = 340;
+  let left = Math.min(rect.left, window.innerWidth - w - 12);
+  left = Math.max(12, left);
+  const estH = Math.min(300, 46 + paths.length * 34);
+  let top = rect.bottom + 6;
+  if (top + estH > window.innerHeight - 12) top = Math.max(12, rect.top - estH - 6);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+document.addEventListener('click', (e) => {
+  const pop = document.getElementById('pathListPopover');
+  if (pop && pop.style.display === 'block' && !pop.contains(e.target) && !e.target.closest('.dup-badge, .conflict-badge')) {
+    pop.style.display = 'none';
+  }
+});
+
 function cycleThumb(event, btn, dir) {
   event.stopPropagation();
   const item = btn.closest('.item');
@@ -2373,7 +2419,12 @@ function showLightbox(thumbs, idx, fileName) {
     dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
   }
   renderLightbox();
+  // showModal()이 닫기 버튼에 포커스를 주면서 일부 브라우저가 페이지를 맨 위로
+  // 스크롤시키는 경우가 있어서, 열기 직전 스크롤 위치를 붙잡아 뒀다가 되돌려줌
+  const scrollY = window.scrollY;
   dlg.showModal();
+  window.scrollTo(0, scrollY);
+  requestAnimationFrame(() => window.scrollTo(0, scrollY));
 }
 function renderLightbox() {
   const { thumbs, idx, fileName } = lightboxState;
