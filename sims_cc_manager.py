@@ -341,7 +341,7 @@ def parse_dbpf(path):
                     _ = f.read(4)
                     compression = struct.unpack("<H", f.read(2))[0]
                     _ = f.read(2)
-                    yield {"type": t, "instance": (ihi << 32) | ilo,
+                    yield {"type": t, "group": g, "instance": (ihi << 32) | ilo,
                            "offset": offset, "size": size, "compression": compression}
                 except struct.error:
                     return
@@ -381,18 +381,25 @@ def parse_casp_name(data):
 
 
 def parse_package_casp_and_thumbs(pkg_path, need_casp=True):
-    """CASP 카테고리와 썸네일을 DBPF 인덱스 한 번만 순회해서 함께 추출.
+    """CASP 카테고리, 썸네일, CASP 리소스 키(type,group,instance)를 DBPF 인덱스
+    한 번만 순회해서 함께 추출.
     (스캔 시 카테고리용/썸네일용으로 따로 parse_dbpf를 두 번 부르면 인덱스를 매번 다시 읽게 됨)
     반환값에 readable/reason도 포함 — 헤더가 깨졌거나 열 수 없는 .package를 스캔 시 UI에 표시하는 데 씀
-    (인덱스가 비어있을 뿐인 정상 파일은 손상으로 보지 않음)."""
+    (인덱스가 비어있을 뿐인 정상 파일은 손상으로 보지 않음).
+    casp_keys는 이 패키지가 정의하는 모든 CASP 리소스의 (type,group,instance) —
+    다른 패키지와 같은 키를 가지면 둘 중 하나가 로드 순서에 따라 조용히 덮어써지는
+    실제 충돌이므로 별도 파일 읽기 없이(인덱스만으로) 모아서 충돌 감지에 씀."""
     ok, reason, _index_count, _index_offset = _dbpf_header_info(pkg_path)
     if not ok:
-        return None, [], False, reason
+        return None, [], False, reason, []
     casp_category = None
     thumbs = []
+    casp_keys = []
     seen = set()
     for entry in parse_dbpf(pkg_path):
         et = entry["type"]
+        if et == CASP_TYPE:
+            casp_keys.append((et, entry["group"], entry["instance"]))
         want_casp = need_casp and et == CASP_TYPE and casp_category is None
         want_thumb = et in THUMB_TYPES
         if not want_casp and not want_thumb:
@@ -418,7 +425,7 @@ def parse_package_casp_and_thumbs(pkg_path, need_casp=True):
             if h not in seen:
                 seen.add(h)
                 thumbs.append((data, h, ext))
-    return casp_category, thumbs, True, None
+    return casp_category, thumbs, True, None, casp_keys
 
 
 def extract_thumbs(pkg_path):
@@ -509,10 +516,10 @@ def scan_cc(progress_cb=None):
                 cats = [(override_cat, icon)]
                 is_override = True
                 is_casp = False
-                _, thumb_list, readable, unreadable_reason = parse_package_casp_and_thumbs(pkg, need_casp=False)
+                _, thumb_list, readable, unreadable_reason, casp_keys = parse_package_casp_and_thumbs(pkg, need_casp=False)
             else:
                 is_override = False
-                casp_cat, thumb_list, readable, unreadable_reason = parse_package_casp_and_thumbs(pkg)
+                casp_cat, thumb_list, readable, unreadable_reason, casp_keys = parse_package_casp_and_thumbs(pkg)
                 if casp_cat:
                     cats = [casp_cat]
                     is_casp = True
@@ -541,6 +548,7 @@ def scan_cc(progress_cb=None):
             if not readable:
                 item["unreadable"] = True
                 item["unreadable_reason"] = unreadable_reason
+            item["_casp_keys"] = casp_keys  # 임시: 아래에서 충돌 감지에 쓰고 최종 매니페스트 전에 제거
             for img_bytes, h, ext in thumb_list:
                 thumb_name = f"{h[:16]}{ext}"
                 thumb_path = THUMBS_DIR / thumb_name
@@ -563,6 +571,22 @@ def scan_cc(progress_cb=None):
                 if dup_paths:
                     it["dup_paths"] = sorted(dup_paths)[:20]
                     it["dup_count"] = len(dup_paths)
+
+        # 같은 CASP 리소스 키(type,group,instance)를 정의하는 패키지 = 실제 충돌.
+        # 로드 순서에 따라 둘 중 하나가 조용히 다른 하나를 덮어씀. 인덱스만으로 판단하므로
+        # 여기도 추가 파일 읽기 없음. _casp_keys는 감지에만 쓰고 매니페스트에는 남기지 않음.
+        key_to_paths = defaultdict(list)
+        for items in groups.values():
+            for it in items:
+                for k in it["_casp_keys"]:
+                    key_to_paths[k].append(it["path"])
+        for items in groups.values():
+            for it in items:
+                conflict_paths = {p for k in it["_casp_keys"] for p in key_to_paths[k] if p != it["path"]}
+                if conflict_paths:
+                    it["conflict_paths"] = sorted(conflict_paths)[:20]
+                    it["conflict_count"] = len(conflict_paths)
+                del it["_casp_keys"]
 
         folders = [{"name": name, "items": sorted(items, key=lambda x: x["file"])}
                    for name, items in sorted(groups.items())]
@@ -620,12 +644,14 @@ def _compute_stats():
     newest = 0; oldest = float("inf")
     unreadable_count = 0
     dup_count = 0
+    conflict_count = 0
     for f in folders:
         for it in f.get("items", []):
             if it.get("trashed") or it.get("perma_deleted"): continue
             total_files += 1
             if it.get("unreadable"): unreadable_count += 1
             if it.get("dup_paths"): dup_count += 1
+            if it.get("conflict_paths"): conflict_count += 1
             sz = it.get("size", 0); total_size += sz
             cname = f.get("name", "?")
             c = creators.setdefault(cname, {"size": 0, "count": 0})
@@ -661,6 +687,7 @@ def _compute_stats():
         "overrides_count": len(_load_overrides()),
         "unreadable_count": unreadable_count,
         "dup_count": dup_count,
+        "conflict_count": conflict_count,
         "newest_mtime": newest,
         "oldest_mtime": oldest if oldest != float("inf") else 0,
     }
@@ -1093,9 +1120,10 @@ HTML_PAGE = """<!DOCTYPE html>
   .item.perma-deleted .name, .item.perma-deleted .name-full { text-decoration: line-through; color: var(--c-text-subtle); }
   .trash-badge { position: absolute; top: 5px; left: 5px; background: rgba(20,19,18,.72); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; z-index: 3; }
   .corner-badges { position: absolute; right: 5px; bottom: 5px; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; z-index: 3; }
-  .unreadable-badge, .dup-badge { color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 600; cursor: help; }
+  .unreadable-badge, .dup-badge, .conflict-badge { color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 600; cursor: help; }
   .unreadable-badge { background: rgba(178,60,43,.88); }
   .dup-badge { background: rgba(178,130,20,.88); }
+  .conflict-badge { background: rgba(150,40,140,.88); }
   /* 카테고리 텍스트 뱃지: 썸네일 우상단 흰 알약 */
   .cat-pill { position: absolute; right: 5px; top: 5px; font-size: 9px; font-weight: 600; color: var(--c-text-muted); background: var(--c-overlay); border-radius: 9px; padding: 2px 6px; box-shadow: 0 1px 2px rgba(0,0,0,.12); z-index: 2; cursor: context-menu; max-width: 78%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cat-pill.override { background: #fff3c4; box-shadow: 0 0 0 1px #d4a017; }
@@ -1287,6 +1315,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <button class="chip-toggle" data-filter="tglOverride" onclick="toggleChipFilter('tglOverride')">수동 지정만</button>
     <button class="chip-toggle" data-filter="tglUnreadable" onclick="toggleChipFilter('tglUnreadable')">읽기 실패만</button>
     <button class="chip-toggle" data-filter="tglDup" onclick="toggleChipFilter('tglDup')">중복 의심만</button>
+    <button class="chip-toggle" data-filter="tglConflict" onclick="toggleChipFilter('tglConflict')">CAS 충돌만</button>
     <button class="chip-toggle" data-filter="tglHideTrashed" onclick="toggleChipFilter('tglHideTrashed')">휴지통 항목 숨기기</button>
     <button class="chip-toggle on" data-filter="tglHidePerma" onclick="toggleChipFilter('tglHidePerma')">완전삭제 숨기기</button>
     <button class="chip-toggle" data-filter="tglCollapsed" onclick="toggleChipFilter('tglCollapsed')">모두 접기</button>
@@ -1462,16 +1491,18 @@ let collapsedMode = false;
 let showOverrideOnly = false;
 let showUnreadableOnly = false;
 let showDupOnly = false;
+let showConflictOnly = false;
 let hideTrashed = false;
 let hidePerma = true;
 let editMode = 'delete';  // 'delete' | 'category'
-const FILTER_KEYS = ['tglMarked', 'tglOverride', 'tglUnreadable', 'tglDup', 'tglHideTrashed', 'tglHidePerma', 'tglCollapsed'];
+const FILTER_KEYS = ['tglMarked', 'tglOverride', 'tglUnreadable', 'tglDup', 'tglConflict', 'tglHideTrashed', 'tglHidePerma', 'tglCollapsed'];
 
 function applyFilterState(key, val) {
   if (key === 'tglMarked') showMarkedOnly = val;
   else if (key === 'tglOverride') showOverrideOnly = val;
   else if (key === 'tglUnreadable') showUnreadableOnly = val;
   else if (key === 'tglDup') showDupOnly = val;
+  else if (key === 'tglConflict') showConflictOnly = val;
   else if (key === 'tglHideTrashed') hideTrashed = val;
   else if (key === 'tglHidePerma') hidePerma = val;
   else if (key === 'tglCollapsed') collapsedMode = val;
@@ -1728,6 +1759,7 @@ function render() {
       if (showOverrideOnly && !it.override) return false;
       if (showUnreadableOnly && !it.unreadable) return false;
       if (showDupOnly && !(it.dup_paths && it.dup_paths.length)) return false;
+      if (showConflictOnly && !(it.conflict_paths && it.conflict_paths.length)) return false;
       if (!matchesCatFilter(it.cats)) return false;
       if (currentFilter) {
         const hay = (it.file + ' ' + c.name).toLowerCase();
@@ -1792,6 +1824,7 @@ function render() {
       div.title = (it.trashed ? '휴지통에 있음 (클릭 → 복원)\\n' : '')
         + (it.unreadable ? `⚠️ 읽기 실패: ${it.unreadable_reason || '알 수 없는 오류'}\\n` : '')
         + (it.dup_paths && it.dup_paths.length ? `👯 중복 의심 (같은 썸네일 ${it.dup_count}개와 겹침)\\n` : '')
+        + (it.conflict_paths && it.conflict_paths.length ? `⚡ CAS 충돌 (같은 CAS 파츠를 정의하는 파일 ${it.conflict_count}개와 겹침)\\n` : '')
         + it.file + '\\n' + human(it.size);
       let thumbHtml;
       if (it.thumbs.length) {
@@ -1815,6 +1848,9 @@ function render() {
       }
       if (it.dup_paths && it.dup_paths.length) {
         cornerFlags.push(`<div class="dup-badge" title="${escapeHtml('같은 썸네일을 쓰는 다른 파일 ' + it.dup_count + '개:\\n' + it.dup_paths.slice(0, 5).join('\\n') + (it.dup_count > 5 ? `\\n...외 ${it.dup_count - 5}개` : ''))}">👯 중복 의심</div>`);
+      }
+      if (it.conflict_paths && it.conflict_paths.length) {
+        cornerFlags.push(`<div class="conflict-badge" title="${escapeHtml('같은 CAS 파츠를 정의하는 다른 파일 ' + it.conflict_count + '개 (로드 순서에 따라 하나가 다른 하나를 덮어씀):\\n' + it.conflict_paths.slice(0, 5).join('\\n') + (it.conflict_count > 5 ? `\\n...외 ${it.conflict_count - 5}개` : ''))}">⚡ CAS 충돌</div>`);
       }
       const cornerBadgesHtml = cornerFlags.length ? `<div class="corner-badges">${cornerFlags.join('')}</div>` : '';
       const overrideClass = it.override ? ' override' : '';
@@ -2884,6 +2920,7 @@ async function openStats() {
       <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">평균 크기 / 썸네일</div><div style="font-size:12px;">${human(s.avg_size||0)}<br>${(s.total_thumbs||0).toLocaleString()}개</div></div>
       <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">읽기 실패</div><div style="font-size:20px;font-weight:600;${s.unreadable_count ? 'color:var(--c-red);' : ''}">${s.unreadable_count || 0}</div></div>
       <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">중복 의심</div><div style="font-size:20px;font-weight:600;">${s.dup_count || 0}</div></div>
+      <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">CAS 충돌</div><div style="font-size:20px;font-weight:600;${s.conflict_count ? 'color:var(--c-red);' : ''}">${s.conflict_count || 0}</div></div>
     </div>
     <h3 style="margin:8px 0;font-size:14px;">🏆 창작자 Top 10 (용량 기준)</h3>
     <div style="margin-bottom:16px;">
