@@ -788,6 +788,35 @@ def _update_manifest_items(paths, updates, per_item_updates=None):
     MANIFEST_PATH.write_text(json.dumps(m, ensure_ascii=False))
 
 
+def _remove_from_cross_refs(removed_paths):
+    """다른 항목들의 dup_paths/conflict_paths에서 방금 휴지통으로 옮긴 파일 참조를 지움.
+    스캔 시점에 계산해서 매니페스트에 박아둔 값이라, 삭제해도 재스캔 전까지는 상대방
+    항목에 "중복 의심"/"CAS 충돌" 배지가 그대로 남아있던 문제 — 삭제 직후 바로 반영."""
+    if not removed_paths:
+        return
+    removed_set = set(removed_paths)
+    m = load_manifest()
+    if not m:
+        return
+    changed = False
+    for folder in m.get("folders", []) + m.get("creators", []):
+        for it in folder.get("items", []):
+            for field, count_field in (("dup_paths", "dup_count"), ("conflict_paths", "conflict_count")):
+                paths = it.get(field)
+                if not paths or not (removed_set & set(paths)):
+                    continue
+                remaining = [p for p in paths if p not in removed_set]
+                if remaining:
+                    it[field] = remaining
+                    it[count_field] = len(remaining)
+                else:
+                    it.pop(field, None)
+                    it.pop(count_field, None)
+                changed = True
+    if changed:
+        MANIFEST_PATH.write_text(json.dumps(m, ensure_ascii=False))
+
+
 def move_to_trash(rel_paths):
     moved, failed = [], []
     trash_m = _load_trash_manifest()
@@ -823,6 +852,7 @@ def move_to_trash(rel_paths):
         # 나중에 이 경로로 복원 요청을 보낼 수 있음
         per_item = {rel: {"trash_path": trash_rel_by_original[rel]} for rel in moved}
         _update_manifest_items(moved, {"trashed": True, "perma_deleted": False}, per_item_updates=per_item)
+        _remove_from_cross_refs(moved)
     return {"moved": moved, "failed": failed, "moved_trash_paths": trash_rel_by_original}
 
 
@@ -1196,6 +1226,10 @@ HTML_PAGE = """<!DOCTYPE html>
   .zoom-btn { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); background: rgba(20,19,18,.72); color: white; border: none; border-radius: 13px; width: 30px; height: 26px; font-size: 13px; padding: 0; cursor: zoom-in; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 4; }
   .item:hover .zoom-btn { opacity: 1; pointer-events: auto; }
   .zoom-btn:hover { background: rgba(20,19,18,.9); }
+  /* 전역 button:active가 transform을 translateY(1px)로 통째로 덮어써서 클릭 순간
+     left:50%+translateX(-50%) 가운데 정렬이 풀리고 버튼이 오른쪽으로 튀던 문제 —
+     같은 selector 안에서 두 transform을 함께 명시해서 클릭 중에도 정렬 유지 */
+  .zoom-btn:active { transform: translateX(-50%) translateY(1px); }
   /* 화면 중앙 고정은 네이티브 dialog:modal 기본 동작 그대로 사용 (아래 dialog{position:relative} 제거함) */
   .lightbox-dialog { max-width: 92vw; max-height: 92vh; background: transparent; border: none; padding: 0; overflow: visible; }
   .lightbox-dialog::backdrop { background: rgba(0,0,0,.8); }
