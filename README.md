@@ -6,6 +6,17 @@
 필요 없는 항목을 안전하게 골라 정리하거나, 중복·손상·충돌 파일을 찾아낼 수 있게 해준다.
 외부 의존성 없이 파이썬 표준 라이브러리만으로 동작하는 단일 파일 앱.
 
+![갤러리 화면](screenshots/gallery.png)
+
+<sub>※ 스크린샷은 실제 CC나 창작자 이름이 아닌 샘플 데이터로 찍은 것.</sub>
+
+<table>
+<tr>
+<td width="50%"><img src="screenshots/stats.png" alt="통계"><br><sub>통계 대시보드</sub></td>
+<td width="50%"><img src="screenshots/dup-detection.png" alt="중복 탐지"><br><sub>중복 의심 항목 클릭 → 겹치는 파일 목록</sub></td>
+</tr>
+</table>
+
 ## 요구사항
 
 - macOS
