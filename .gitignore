@@ -6,3 +6,4 @@ __pycache__/
 .cc_trash/
 /tmp/cc_gallery/
 delete_cc.sh
+tools/screenshot-kit/mock-data/
