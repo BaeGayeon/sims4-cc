@@ -1063,6 +1063,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .chip-toggle:hover { background: var(--c-bg); }
   .chip-toggle.on { background: var(--c-blue-bg); color: var(--c-blue); border-color: var(--c-blue); font-weight: 600; }
   .pill-btn { height: 28px; padding: 0 11px; border-radius: 14px; background: var(--c-surface); border: 1px solid var(--c-border-strong); color: var(--c-text-muted); font-size: 11.5px; font-weight: 500; }
+  .size-filter-input { width: 56px; height: 28px; padding: 0 8px; border-radius: 14px; background: var(--c-surface); border: 1px solid var(--c-border-strong); color: var(--c-text); font-size: 11.5px; }
+  .size-filter-input:focus { outline: none; border-color: var(--c-blue); }
   .pill-btn:hover { background: var(--c-bg); }
   .pill-btn.danger { color: var(--c-red); }
   .pill-btn.danger:hover { background: var(--c-red-bg); }
@@ -1320,6 +1322,12 @@ HTML_PAGE = """<!DOCTYPE html>
     <button class="chip-toggle on" data-filter="tglHidePerma" onclick="toggleChipFilter('tglHidePerma')">완전삭제 숨기기</button>
     <button class="chip-toggle" data-filter="tglCollapsed" onclick="toggleChipFilter('tglCollapsed')">모두 접기</button>
     <div class="divider"></div>
+    <span class="label">용량(MB)</span>
+    <input type="number" id="sizeMin" min="0" step="0.1" placeholder="최소" class="size-filter-input" oninput="applySizeFilter()">
+    <span class="label">~</span>
+    <input type="number" id="sizeMax" min="0" step="0.1" placeholder="최대" class="size-filter-input" oninput="applySizeFilter()">
+    <button class="pill-btn" onclick="clearSizeFilter()" title="용량 필터 해제">✕</button>
+    <div class="divider"></div>
     <span class="label">일괄 작업</span>
     <button onclick="selectAllFiltered()" title="지금 화면에 보이는 아이템 모두를 다중선택에 추가" class="pill-btn">전체 선택</button>
     <button onclick="clearBulkSel()" title="다중선택 전체 해제" class="pill-btn">전체 선택 해제</button>
@@ -1492,6 +1500,8 @@ let showOverrideOnly = false;
 let showUnreadableOnly = false;
 let showDupOnly = false;
 let showConflictOnly = false;
+let sizeMinBytes = null;
+let sizeMaxBytes = null;
 let hideTrashed = false;
 let hidePerma = true;
 let editMode = 'delete';  // 'delete' | 'category'
@@ -1520,14 +1530,34 @@ function toggleChipFilter(key) {
   render();
 }
 function updateFilterBadge() {
-  const onCount = FILTER_KEYS.filter(k => {
+  let onCount = FILTER_KEYS.filter(k => {
     const btn = document.querySelector(`.chip-toggle[data-filter="${k}"]`);
     return btn && btn.classList.contains('on');
   }).length;
+  if (sizeMinBytes != null || sizeMaxBytes != null) onCount++;
   const btn = document.getElementById('filterToggleBtn');
   if (!btn) return;
   btn.textContent = onCount ? `필터 · ${onCount}` : '필터';
   btn.classList.toggle('active', onCount > 0);
+}
+let sizeFilterDebounceTimer = null;
+function applySizeFilter() {
+  clearTimeout(sizeFilterDebounceTimer);
+  sizeFilterDebounceTimer = setTimeout(() => {
+    const minV = parseFloat(document.getElementById('sizeMin').value);
+    const maxV = parseFloat(document.getElementById('sizeMax').value);
+    sizeMinBytes = isNaN(minV) ? null : minV * 1024 * 1024;
+    sizeMaxBytes = isNaN(maxV) ? null : maxV * 1024 * 1024;
+    updateFilterBadge();
+    render();
+  }, 200);
+}
+function clearSizeFilter() {
+  document.getElementById('sizeMin').value = '';
+  document.getElementById('sizeMax').value = '';
+  sizeMinBytes = null; sizeMaxBytes = null;
+  updateFilterBadge();
+  render();
 }
 function toggleFilterPanel() {
   const panel = document.getElementById('filterPanel');
@@ -1760,6 +1790,8 @@ function render() {
       if (showUnreadableOnly && !it.unreadable) return false;
       if (showDupOnly && !(it.dup_paths && it.dup_paths.length)) return false;
       if (showConflictOnly && !(it.conflict_paths && it.conflict_paths.length)) return false;
+      if (sizeMinBytes != null && it.size < sizeMinBytes) return false;
+      if (sizeMaxBytes != null && it.size > sizeMaxBytes) return false;
       if (!matchesCatFilter(it.cats)) return false;
       if (currentFilter) {
         const hay = (it.file + ' ' + c.name).toLowerCase();
