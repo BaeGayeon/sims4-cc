@@ -299,16 +299,32 @@ def categorize(filename, size=0):
 
 # ─────────── DBPF 파서 ───────────
 
-def parse_dbpf(path):
+def _dbpf_header_info(path):
+    """DBPF 헤더만 읽어서 유효성 확인. (ok, reason, index_count, index_offset)
+    reason은 ok=False일 때만 채워짐 — 손상되거나 읽을 수 없는 .package를 UI에 표시하는 데 씀."""
     try:
         with open(path, "rb") as f:
             hdr = f.read(96)
-            if hdr[:4] != b"DBPF" or struct.unpack("<I", hdr[4:8])[0] != 2:
-                return
-            index_count = struct.unpack("<I", hdr[36:40])[0]
-            index_offset = struct.unpack("<I", hdr[64:68])[0]
-            if index_offset == 0 or index_count == 0:
-                return
+    except OSError as e:
+        return False, f"파일을 열 수 없음: {e}", 0, 0
+    if len(hdr) < 96:
+        return False, "헤더가 손상됨 (파일이 너무 작음)", 0, 0
+    if hdr[:4] != b"DBPF":
+        return False, "DBPF 형식이 아님", 0, 0
+    version = struct.unpack("<I", hdr[4:8])[0]
+    if version != 2:
+        return False, f"지원하지 않는 DBPF 버전 ({version})", 0, 0
+    index_count = struct.unpack("<I", hdr[36:40])[0]
+    index_offset = struct.unpack("<I", hdr[64:68])[0]
+    return True, None, index_count, index_offset
+
+
+def parse_dbpf(path):
+    ok, _reason, index_count, index_offset = _dbpf_header_info(path)
+    if not ok or index_offset == 0 or index_count == 0:
+        return
+    try:
+        with open(path, "rb") as f:
             f.seek(index_offset)
             flags = struct.unpack("<I", f.read(4))[0]
             ct = struct.unpack("<I", f.read(4))[0] if flags & 1 else 0
@@ -366,7 +382,12 @@ def parse_casp_name(data):
 
 def parse_package_casp_and_thumbs(pkg_path, need_casp=True):
     """CASP 카테고리와 썸네일을 DBPF 인덱스 한 번만 순회해서 함께 추출.
-    (스캔 시 카테고리용/썸네일용으로 따로 parse_dbpf를 두 번 부르면 인덱스를 매번 다시 읽게 됨)"""
+    (스캔 시 카테고리용/썸네일용으로 따로 parse_dbpf를 두 번 부르면 인덱스를 매번 다시 읽게 됨)
+    반환값에 readable/reason도 포함 — 헤더가 깨졌거나 열 수 없는 .package를 스캔 시 UI에 표시하는 데 씀
+    (인덱스가 비어있을 뿐인 정상 파일은 손상으로 보지 않음)."""
+    ok, reason, _index_count, _index_offset = _dbpf_header_info(pkg_path)
+    if not ok:
+        return None, [], False, reason
     casp_category = None
     thumbs = []
     seen = set()
@@ -397,7 +418,7 @@ def parse_package_casp_and_thumbs(pkg_path, need_casp=True):
             if h not in seen:
                 seen.add(h)
                 thumbs.append((data, h, ext))
-    return casp_category, thumbs
+    return casp_category, thumbs, True, None
 
 
 def extract_thumbs(pkg_path):
@@ -488,10 +509,10 @@ def scan_cc(progress_cb=None):
                 cats = [(override_cat, icon)]
                 is_override = True
                 is_casp = False
-                _, thumb_list = parse_package_casp_and_thumbs(pkg, need_casp=False)
+                _, thumb_list, readable, unreadable_reason = parse_package_casp_and_thumbs(pkg, need_casp=False)
             else:
                 is_override = False
-                casp_cat, thumb_list = parse_package_casp_and_thumbs(pkg)
+                casp_cat, thumb_list, readable, unreadable_reason = parse_package_casp_and_thumbs(pkg)
                 if casp_cat:
                     cats = [casp_cat]
                     is_casp = True
@@ -517,6 +538,9 @@ def scan_cc(progress_cb=None):
                 "casp": is_casp,
                 "override": is_override,
             }
+            if not readable:
+                item["unreadable"] = True
+                item["unreadable_reason"] = unreadable_reason
             for img_bytes, h, ext in thumb_list:
                 thumb_name = f"{h[:16]}{ext}"
                 thumb_path = THUMBS_DIR / thumb_name
@@ -580,10 +604,12 @@ def _compute_stats():
     creators = {}   # name -> {size, count}
     cats = {}       # cat -> {count, size}
     newest = 0; oldest = float("inf")
+    unreadable_count = 0
     for f in folders:
         for it in f.get("items", []):
             if it.get("trashed") or it.get("perma_deleted"): continue
             total_files += 1
+            if it.get("unreadable"): unreadable_count += 1
             sz = it.get("size", 0); total_size += sz
             cname = f.get("name", "?")
             c = creators.setdefault(cname, {"size": 0, "count": 0})
@@ -617,6 +643,7 @@ def _compute_stats():
         "trash_count": trash_count,
         "trash_size": trash_size,
         "overrides_count": len(_load_overrides()),
+        "unreadable_count": unreadable_count,
         "newest_mtime": newest,
         "oldest_mtime": oldest if oldest != float("inf") else 0,
     }
@@ -1048,6 +1075,7 @@ HTML_PAGE = """<!DOCTYPE html>
   .item.perma-deleted .thumb-frame { opacity: 0.35; filter: grayscale(1) brightness(0.7); }
   .item.perma-deleted .name, .item.perma-deleted .name-full { text-decoration: line-through; color: var(--c-text-subtle); }
   .trash-badge { position: absolute; top: 5px; left: 5px; background: rgba(20,19,18,.72); color: white; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; z-index: 3; }
+  .unreadable-badge { position: absolute; right: 5px; bottom: 5px; background: rgba(178,60,43,.88); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 600; z-index: 3; cursor: help; }
   /* 카테고리 텍스트 뱃지: 썸네일 우상단 흰 알약 */
   .cat-pill { position: absolute; right: 5px; top: 5px; font-size: 9px; font-weight: 600; color: var(--c-text-muted); background: var(--c-overlay); border-radius: 9px; padding: 2px 6px; box-shadow: 0 1px 2px rgba(0,0,0,.12); z-index: 2; cursor: context-menu; max-width: 78%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cat-pill.override { background: #fff3c4; box-shadow: 0 0 0 1px #d4a017; }
@@ -1237,6 +1265,7 @@ HTML_PAGE = """<!DOCTYPE html>
   <div class="row" id="filterPanel" style="background:var(--c-surface-2); display:none;">
     <button class="chip-toggle" data-filter="tglMarked" onclick="toggleChipFilter('tglMarked')">지울 것만</button>
     <button class="chip-toggle" data-filter="tglOverride" onclick="toggleChipFilter('tglOverride')">수동 지정만</button>
+    <button class="chip-toggle" data-filter="tglUnreadable" onclick="toggleChipFilter('tglUnreadable')">읽기 실패만</button>
     <button class="chip-toggle" data-filter="tglHideTrashed" onclick="toggleChipFilter('tglHideTrashed')">휴지통 항목 숨기기</button>
     <button class="chip-toggle on" data-filter="tglHidePerma" onclick="toggleChipFilter('tglHidePerma')">완전삭제 숨기기</button>
     <button class="chip-toggle" data-filter="tglCollapsed" onclick="toggleChipFilter('tglCollapsed')">모두 접기</button>
@@ -1410,14 +1439,16 @@ let subFilter = '';
 let groupBy = 'creator';
 let collapsedMode = false;
 let showOverrideOnly = false;
+let showUnreadableOnly = false;
 let hideTrashed = false;
 let hidePerma = true;
 let editMode = 'delete';  // 'delete' | 'category'
-const FILTER_KEYS = ['tglMarked', 'tglOverride', 'tglHideTrashed', 'tglHidePerma', 'tglCollapsed'];
+const FILTER_KEYS = ['tglMarked', 'tglOverride', 'tglUnreadable', 'tglHideTrashed', 'tglHidePerma', 'tglCollapsed'];
 
 function applyFilterState(key, val) {
   if (key === 'tglMarked') showMarkedOnly = val;
   else if (key === 'tglOverride') showOverrideOnly = val;
+  else if (key === 'tglUnreadable') showUnreadableOnly = val;
   else if (key === 'tglHideTrashed') hideTrashed = val;
   else if (key === 'tglHidePerma') hidePerma = val;
   else if (key === 'tglCollapsed') collapsedMode = val;
@@ -1672,6 +1703,7 @@ function render() {
       if (hideTrashed && it.trashed) return false;
       if (showMarkedOnly && !state[it.path]) return false;
       if (showOverrideOnly && !it.override) return false;
+      if (showUnreadableOnly && !it.unreadable) return false;
       if (!matchesCatFilter(it.cats)) return false;
       if (currentFilter) {
         const hay = (it.file + ' ' + c.name).toLowerCase();
@@ -1733,7 +1765,9 @@ function render() {
       div.draggable = !it.trashed && !it.perma_deleted;
       div.dataset.path = it.path;
       div.dataset.thumbIdx = '0';
-      div.title = (it.trashed ? '휴지통에 있음 (클릭 → 복원)\\n' : '') + it.file + '\\n' + human(it.size);
+      div.title = (it.trashed ? '휴지통에 있음 (클릭 → 복원)\\n' : '')
+        + (it.unreadable ? `⚠️ 읽기 실패: ${it.unreadable_reason || '알 수 없는 오류'}\\n` : '')
+        + it.file + '\\n' + human(it.size);
       let thumbHtml;
       if (it.thumbs.length) {
         thumbHtml = `<img class="thumb-img" src="/thumbs/${it.thumbs[0]}" loading="lazy">`;
@@ -1750,6 +1784,9 @@ function render() {
       const trashBadge = it.perma_deleted ? '<div class="trash-badge" style="background:rgba(60,0,0,.85);">완전삭제</div>'
                         : it.trashed ? '<div class="trash-badge">휴지통</div>'
                         : '';
+      const unreadableBadge = it.unreadable
+        ? `<div class="unreadable-badge" title="${escapeHtml('읽기 실패: ' + (it.unreadable_reason || '알 수 없는 오류'))}">⚠️ 읽기 실패</div>`
+        : '';
       const overrideClass = it.override ? ' override' : '';
       const catLabel = it.primary_cat || (it.cats && it.cats[0]) || '기타';
       const catTitle = it.override ? '수동 지정' : (it.casp ? 'CASP 파싱' : '파일명 추측') + ' (클릭으로 변경)';
@@ -1759,7 +1796,7 @@ function render() {
       // 44자 초과 시 hover 팝오버로 전체 이름 보여줌 (짧으면 name-full 안 만듦)
       const needsPopover = it.file.length > 44;
       const nameFull = needsPopover ? `<div class="name-full">${escapeHtml(it.file)}</div>` : '';
-      div.innerHTML = `<div class="thumb-frame">${thumbHtml}${trashBadge}${catPill}<div class="sel-badge">✓</div><div class="sz">${human(it.size)}</div></div>${creatorSubtitle}<div class="name">${escapeHtml(it.file)}</div>${nameFull}`;
+      div.innerHTML = `<div class="thumb-frame">${thumbHtml}${trashBadge}${catPill}<div class="sel-badge">✓</div><div class="sz">${human(it.size)}</div>${unreadableBadge}</div>${creatorSubtitle}<div class="name">${escapeHtml(it.file)}</div>${nameFull}`;
       const clickHandler = it.perma_deleted
         ? () => toast('❌ 완전삭제된 파일입니다 (되돌릴 수 없음)')
         : it.trashed
@@ -2815,6 +2852,7 @@ async function openStats() {
       <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">휴지통</div><div style="font-size:14px;">${s.trash_count}개 · ${human(s.trash_size)}</div></div>
       <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">최신 / 최고령</div><div style="font-size:12px;">${fmtDate(s.newest_mtime)}<br>${fmtDate(s.oldest_mtime)}</div></div>
       <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">평균 크기 / 썸네일</div><div style="font-size:12px;">${human(s.avg_size||0)}<br>${(s.total_thumbs||0).toLocaleString()}개</div></div>
+      <div style="padding:10px;background:var(--c-surface-2);border-radius:6px;"><div style="font-size:11px;color:var(--c-text-muted);">읽기 실패</div><div style="font-size:20px;font-weight:600;${s.unreadable_count ? 'color:var(--c-red);' : ''}">${s.unreadable_count || 0}</div></div>
     </div>
     <h3 style="margin:8px 0;font-size:14px;">🏆 창작자 Top 10 (용량 기준)</h3>
     <div style="margin-bottom:16px;">
