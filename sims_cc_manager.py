@@ -1159,6 +1159,19 @@ HTML_PAGE = """<!DOCTYPE html>
   .thumb-btn { background: rgba(255,255,255,.2); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 9px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .thumb-btn:hover { background: rgba(255,255,255,.4); }
   .thumb-counter { color: white; padding: 0 4px; font-size: 9px; font-variant-numeric: tabular-nums; }
+  /* 확대 보기 버튼: 썸네일 상단 중앙 (다른 코너 뱃지들과 안 겹침), 호버 시에만 표시 */
+  .zoom-btn { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); background: rgba(20,19,18,.72); color: white; border: none; border-radius: 12px; width: 24px; height: 22px; font-size: 12px; padding: 0; cursor: zoom-in; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 4; }
+  .item:hover .zoom-btn { opacity: 1; pointer-events: auto; }
+  .zoom-btn:hover { background: rgba(20,19,18,.9); }
+  .lightbox-dialog { max-width: 92vw; max-height: 92vh; background: transparent; border: none; padding: 0; overflow: visible; }
+  .lightbox-dialog::backdrop { background: rgba(0,0,0,.8); }
+  .lightbox-dialog .dlg-close { color: #fff; background: rgba(255,255,255,.12); top: -10px; right: -10px; }
+  .lightbox-img { display: block; max-width: 88vw; max-height: 82vh; margin: 0 auto; border-radius: 6px; background: #1a1a1a; }
+  .lightbox-caption { text-align: center; color: #fff; font-size: 12px; margin-top: 10px; opacity: .85; }
+  .lightbox-nav { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.15); color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .lightbox-nav:hover { background: rgba(255,255,255,.3); }
+  .lightbox-prev { left: max(24px, 4vw); }
+  .lightbox-next { right: max(24px, 4vw); }
   .collapsed .grid, .collapsed .creator-actions { display: none; }
   /* 병합된 하단 바: 선택됨 + 삭제표시 + 카테고리 지정 + 휴지통 이동 전부 한 줄 */
   /* flex-wrap: 좁은 화면에서는 줄바꿈으로 처리 - 글자 단위로 깨지는 것 방지 */
@@ -1885,6 +1898,7 @@ function render() {
         cornerFlags.push(`<div class="conflict-badge" title="${escapeHtml('같은 CAS 파츠를 정의하는 다른 파일 ' + it.conflict_count + '개 (로드 순서에 따라 하나가 다른 하나를 덮어씀):\\n' + it.conflict_paths.slice(0, 5).join('\\n') + (it.conflict_count > 5 ? `\\n...외 ${it.conflict_count - 5}개` : ''))}">⚡ CAS 충돌</div>`);
       }
       const cornerBadgesHtml = cornerFlags.length ? `<div class="corner-badges">${cornerFlags.join('')}</div>` : '';
+      const zoomBtnHtml = it.thumbs.length ? `<button type="button" class="zoom-btn" onclick="openLightbox(event, this)" title="확대 보기">🔍</button>` : '';
       const overrideClass = it.override ? ' override' : '';
       const catLabel = it.primary_cat || (it.cats && it.cats[0]) || '기타';
       const catTitle = it.override ? '수동 지정' : (it.casp ? 'CASP 파싱' : '파일명 추측') + ' (클릭으로 변경)';
@@ -1894,7 +1908,7 @@ function render() {
       // 44자 초과 시 hover 팝오버로 전체 이름 보여줌 (짧으면 name-full 안 만듦)
       const needsPopover = it.file.length > 44;
       const nameFull = needsPopover ? `<div class="name-full">${escapeHtml(it.file)}</div>` : '';
-      div.innerHTML = `<div class="thumb-frame">${thumbHtml}${trashBadge}${catPill}<div class="sel-badge">✓</div><div class="sz">${human(it.size)}</div>${cornerBadgesHtml}</div>${creatorSubtitle}<div class="name">${escapeHtml(it.file)}</div>${nameFull}`;
+      div.innerHTML = `<div class="thumb-frame">${thumbHtml}${trashBadge}${catPill}<div class="sel-badge">✓</div><div class="sz">${human(it.size)}</div>${cornerBadgesHtml}${zoomBtnHtml}</div>${creatorSubtitle}<div class="name">${escapeHtml(it.file)}</div>${nameFull}`;
       const clickHandler = it.perma_deleted
         ? () => toast('❌ 완전삭제된 파일입니다 (되돌릴 수 없음)')
         : it.trashed
@@ -2314,6 +2328,56 @@ function cycleThumb(event, btn, dir) {
   item.querySelector('.thumb-img').src = `/thumbs/${thumbs[idx]}`;
   item.querySelector('.thumb-counter').textContent = `${idx+1}/${thumbs.length}`;
 }
+
+// ─────── 썸네일 확대 보기(라이트박스) ───────
+let lightboxState = { thumbs: [], idx: 0, fileName: '' };
+function openLightbox(event, btn) {
+  event.stopPropagation();
+  const item = btn.closest('.item');
+  const thumbs = JSON.parse(item.dataset.thumbs || '[]');
+  if (!thumbs.length) return;
+  const idx = parseInt(item.dataset.thumbIdx || '0', 10);
+  const fileName = item.dataset.path.split('/').pop();
+  showLightbox(thumbs, idx, fileName);
+}
+function showLightbox(thumbs, idx, fileName) {
+  lightboxState = { thumbs, idx, fileName };
+  let dlg = document.getElementById('lightbox-dialog');
+  if (!dlg) {
+    dlg = document.createElement('dialog');
+    dlg.id = 'lightbox-dialog';
+    dlg.className = 'lightbox-dialog';
+    dlg.innerHTML = `
+      <button class="dlg-close" onclick="document.getElementById('lightbox-dialog').close()">✕</button>
+      <button type="button" class="lightbox-nav lightbox-prev" onclick="lightboxCycle(-1)">◀</button>
+      <img id="lightbox-img" class="lightbox-img">
+      <button type="button" class="lightbox-nav lightbox-next" onclick="lightboxCycle(1)">▶</button>
+      <div id="lightbox-caption" class="lightbox-caption"></div>
+    `;
+    document.body.appendChild(dlg);
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+  }
+  renderLightbox();
+  dlg.showModal();
+}
+function renderLightbox() {
+  const { thumbs, idx, fileName } = lightboxState;
+  document.getElementById('lightbox-img').src = `/thumbs/${thumbs[idx]}`;
+  const counter = thumbs.length > 1 ? ` · ${idx+1}/${thumbs.length}` : '';
+  document.getElementById('lightbox-caption').textContent = fileName + counter;
+  document.querySelectorAll('#lightbox-dialog .lightbox-nav').forEach(b => b.style.display = thumbs.length > 1 ? 'flex' : 'none');
+}
+function lightboxCycle(dir) {
+  const { thumbs } = lightboxState;
+  lightboxState.idx = (lightboxState.idx + dir + thumbs.length) % thumbs.length;
+  renderLightbox();
+}
+document.addEventListener('keydown', (e) => {
+  const dlg = document.getElementById('lightbox-dialog');
+  if (!dlg || !dlg.open) return;
+  if (e.key === 'ArrowLeft') lightboxCycle(-1);
+  else if (e.key === 'ArrowRight') lightboxCycle(1);
+});
 
 function markCreator(name, mark) {
   const c = MANIFEST.creators.find(x => x.name === name);
