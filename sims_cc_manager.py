@@ -9,6 +9,7 @@ Sims 4 CC Manager
 import json
 import os
 import struct
+import sys
 import zlib
 import hashlib
 import shutil
@@ -19,8 +20,16 @@ from pathlib import Path
 from urllib.parse import urlparse, unquote
 
 # ─────────── 경로 설정 ───────────
-# 앱 관련 모든 데이터를 Sims 폴더 밖(macOS 표준 위치)에 저장
-APP_STATE = Path.home() / "Library" / "Application Support" / "Sims4CCManager"
+# 앱 관련 모든 데이터를 Sims 폴더 밖, OS별 표준 사용자 데이터 위치에 저장.
+# (예전엔 macOS 경로가 하드코딩돼 있어서 Windows에서 실행하면 홈 폴더 바로 밑에
+#  엉뚱한 "Library" 폴더가 생겼음 — 동작은 했지만 그 OS 관례를 안 따르는 상태였음)
+if sys.platform == "darwin":
+    APP_STATE = Path.home() / "Library" / "Application Support" / "Sims4CCManager"
+elif sys.platform == "win32":
+    _appdata = os.environ.get("APPDATA")
+    APP_STATE = Path(_appdata) / "Sims4CCManager" if _appdata else Path.home() / "Sims4CCManager"
+else:  # Linux 등 — XDG 관례
+    APP_STATE = Path.home() / ".local" / "share" / "Sims4CCManager"
 _CONFIG_PATH = APP_STATE / "config.json"
 
 
@@ -1534,7 +1543,7 @@ HTML_PAGE = """<!DOCTYPE html>
     </ul>
 
     <p style="margin: 14px 0 0; padding: 8px; background: var(--c-surface-2); border-radius: 4px; font-size: 11px; color: var(--c-text-muted);">
-      📂 앱 데이터: <code>~/Library/Application Support/Sims4CCManager/</code> (Sims 4 폴더 안 건드림)
+      📂 앱 데이터: <code>__APP_STATE_DIR__</code> (Sims 4 폴더 안 건드림)
     </p>
 
   </div>
@@ -3280,6 +3289,8 @@ loadManifest();
 </script>
 </body></html>
 """
+# 도움말 다이얼로그에 실제 앱 데이터 경로(OS별로 다름)를 반영
+HTML_PAGE = HTML_PAGE.replace("__APP_STATE_DIR__", str(APP_STATE))
 
 
 class Handler(BaseHTTPRequestHandler):
